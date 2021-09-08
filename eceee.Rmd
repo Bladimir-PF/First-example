@@ -1,21 +1,45 @@
 ---
-title: "eceee"
+title: "Second exercise"
 author: "Geraldo B. Padilla F."
 date: "9/8/2021"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+1. Exercise 1 using R
+
+Load packages packages
+
+```{r}
+library(psqf6246stat6516)
 ```
 
-## R Markdown
+2. Varying N (total sample size) and Cohen's d
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+2.1 Run the function below as it is
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+power_one_source(Nmin = 50, # min sample size 
+                 Nmax = 200, # max sample size
+                 Nincrement = 50,  # increment in sample size
+                 dmin = .2,  # min efefct size
+                 dmax = .5,  # max effect size
+                 dincrement = .1, # increment in effect size
+                 n.iter = 1000) # number of iterations 
 ```
- # Methodology
+
+  
+# 2) keep the effect size as it is and reduce the sample the effect size
+
+# 3) keep the effect size as it is and increase the sample the effect size
+
+# 4) repeat the  2) and 4) but now fix the sample size to its orginal values and manipulate the effect size
+
+# 5) How about trying the 3 groups function? What happends to power now?
+
+power_one_source_3groups(Nmin = 50, # min sample size 
+                         Nmax = 200, # max sample size
+                         Nincrement = 50,  # increment in sample size
+                         dmin = .2,  # min efefct size
+                         dmax = .5,  # max effect size
+                         dincrement = .1, # increment in effect size
+                         n.iter = 1000) # number of iterations  
