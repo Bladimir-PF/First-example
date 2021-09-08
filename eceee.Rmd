@@ -18,6 +18,11 @@ library(psqf6246stat6516)
 2.1 Run the function below as it is
 
 ```{r}
+
+```
+
+
+```{r}
 power_one_source(Nmin = 50, # min sample size 
                  Nmax = 200, # max sample size
                  Nincrement = 50,  # increment in sample size
