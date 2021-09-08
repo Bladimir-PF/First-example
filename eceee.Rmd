@@ -7,11 +7,23 @@ output: html_document
 
 1. Exercise 1 using R
 
-Load packages packages
+Load packages
+
+```{r, warning=FALSE, message=FALSE}
+library("easypackages")
+paq <- c('psqf6246stat6516','e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'dbplyer', 'knitr', 'dplyr', 'dbplyr')
+libraries(paq)
+```
+
 
 ```{r}
-library(psqf6246stat6516)
+age <- sample(100: 650, 150, replace = T)
+income <- 
+gf_histogram(age)
 ```
+
+
+
 
 2. Varying N (total sample size) and Cohen's d
 
