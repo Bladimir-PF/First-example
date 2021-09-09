@@ -2,7 +2,9 @@
 title: "Second exercise"
 author: "Geraldo B. Padilla F."
 date: "9/8/2021"
-output: html_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 1. Exercise 1 using R
@@ -15,19 +17,51 @@ paq <- c('psqf6246stat6516','e1071','lubridate', 'mosaic', 'ggformula', 'paramte
 libraries(paq)
 ```
 
-Create 2 variables (x & y) and run some descriptive statistics
+Create some variables and a database. Then, run some descriptive statistics to explore the database.
+We can use different commands to create data depending on the type of variable we need. For instance:
+
+*`runif`: random rational numbers, e.g. `runif(100, min=0, max=1)`
+
+*`sample`: random integer numbers, e.g. `sample(18: 65, 100, replace = T)`
+
+*`rnorm`: random numbers clustered around a mean and sd, e.g. `rnorm(100, mean = 1500, sd= 100)`
+
+Let us use `sample` to create some variables.
 
 ```{r}
 age <- sample(250: 650, 150, replace = T)
 income <- sample(250: 1500, 6000, replace = T)
+SEG <- sample(250: 1, 4, replace = T)
 data <- data.frame(age, income)
 ```
 
-Visualize the data
+If we want to enhance the reproducibility of our work, we can set a seed into the randomization. Thus, we will get always the same random numbers.
 
 ```{r}
-View(data)
-dim(data)
+set.seed(1234)
+age <- sample(18: 65, 250, replace = T)
+';
+/.;dddddd4dsddddd[;?;.;/
+set.seed(1234)
+income <- sample(250: 1500, 250, replace = T)
+
+set.seed(1234)
+SEG <- sample(250: 1, 250, replace = T)
+
+data <- data.frame(age, income, SEG)
+rm(data)
+```
+
+
+
+
+
+Now, visualize the database
+
+```{r}
+View(data) #you will see the rows and columns that make up your database
+summary(data) #you will see some descriptive statistics of the variables in your database 
+str(data) #you will see the structure of your database (variables, scale and some values)
 ```
 
 
