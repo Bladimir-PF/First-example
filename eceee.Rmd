@@ -15,11 +15,39 @@ paq <- c('psqf6246stat6516','e1071','lubridate', 'mosaic', 'ggformula', 'paramte
 libraries(paq)
 ```
 
+Create 2 variables (x & y) and run some descriptive statistics
 
 ```{r}
-age <- sample(100: 650, 150, replace = T)
-income <- 
-gf_histogram(age)
+age <- sample(250: 650, 150, replace = T)
+income <- sample(250: 1500, 6000, replace = T)
+data <- data.frame(age, income)
+```
+
+Visualize the data
+
+```{r}
+View(data)
+dim(data)
+```
+
+
+
+```{r}
+gf_histogram(~income, data = data, bins = 15) %>%
+  gf_labs(x = 'Incomes')
+
+```
+
+the mean is the only value we can use to 'balance' the deviations.
+
+
+histogram(income)
+View(income)
+
+
+
+gf_histogram(~age, income)
+density(age)
 ```
 
 
