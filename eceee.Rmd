@@ -40,21 +40,15 @@ If we want to enhance the reproducibility of our work, we can set a seed into th
 ```{r}
 set.seed(1234)
 age <- sample(18: 65, 250, replace = T)
-';
-/.;dddddd4dsddddd[;?;.;/
-set.seed(1234)
-income <- sample(250: 1500, 250, replace = T)
 
 set.seed(1234)
-SEG <- sample(250: 1, 250, replace = T)
+income <- sample(750: 1500, 250, replace = T)
+
+set.seed(1234)
+SEG <- sample(1: 4, 250, replace = T)
 
 data <- data.frame(age, income, SEG)
-rm(data)
 ```
-
-
-
-
 
 Now, visualize the database
 
@@ -64,13 +58,21 @@ summary(data) #you will see some descriptive statistics of the variables in your
 str(data) #you will see the structure of your database (variables, scale and some values)
 ```
 
+After exploring the database as a unit, we can see the distribution of the variables.
 
-
-```{r}
-gf_histogram(~income, data = data, bins = 15) %>%
+```{r, echo=FALSE}
+gf_histogram(~income, data = data, bins = 50) %>%
   gf_labs(x = 'Incomes')
 
+gf_boxplot(~income, data = data, fill = 'skyblue')%>%
+  gf_labs(x = 'Incomes')
+
+gf_histogram(~income, data = data, bins = 50)%>%
+  gf_boxplot(12 ~ income, data = data, fill = 'blue', width= 1)%>%
+  gf_labs(x= 'Income', y= 'Frequency')
+
 ```
+
 
 the mean is the only value we can use to 'balance' the deviations.
 
