@@ -6,13 +6,13 @@ output: html_document
 ---
 **Notes**
 
-1. Exercises
+## Exercises
 
 ```{r cars}
 summary(cars)
 ```
 
-2. Including Plots
+1. Including Plots
 
 You can also embed plots, for example:
 
@@ -28,7 +28,7 @@ colleges <- read_csv(file = "https://raw.githubusercontent.com/lebebr01/statthin
   guess_max = 10000)
 ```
 
-- To see the first 6 rows:
+To see the first 6 rows:
 
 ```{r}
 head(colleges)
@@ -38,7 +38,7 @@ We can also include an interactive version for viewing the book on the web using
 
 DT::datatable(colleges)
 
-To visualize information, we can use Histograms:
+1.1 To visualize information, we can use Histograms:
 
 ```{r}
 gf_histogram(~ adm_rate, data = colleges)
@@ -47,24 +47,28 @@ gf_histogram(~ adm_rate, data = colleges)
 Symbol ~ helps to identify an exact column in the data object.
 
 We can use colors to the bins:
+
 ```{r}
 gf_histogram(~ adm_rate, data = colleges, color = 'black', fill = 'yellow')
 ```
 
 There are, however, some institutions that are quite selective, only admitting fewer than 25% of the students who apply.
 
-We can adjust the width of the bins:
+We can adjust the number of the bins:
+
 ```{r}
 gf_histogram(~ adm_rate, data = colleges, color = 'black', fill = 'yellow', bins = 10)
 ```
 
-or the number of bins:
+or the width of bins:
+
 ```{r}
 gf_histogram(~ adm_rate, data = colleges, color = 'black', fill = 'yellow', binwidth = .01)
 
 ```
 
 Some customizations can be specified using the gf_labs() function.
+
 ```{r}
 gf_histogram(~adm_rate, data = colleges, color= 'black', fill = 'yellow', bins = 25) %>%
   gf_labs(
@@ -78,17 +82,18 @@ gf_histogram(~adm_rate, data = colleges, color= 'black', fill = 'yellow', bins =
 ```
 
 
-```{r}
 The theme, theme_statthinking() is included in the statthink library, a supplemental package to the text that can be installed and loaded with the following commands:
 
+```{r}
 install.packages("remotes")
 remotes::install_github("lebebr01/statthink")
 remotes::install_github('lebebr01/statthink')
-library(statthink)  
-Attaching package: 'statthink'
+library(statthink)
+```
 
-- We can then change the theme in a similar manner to how we changed the theme before:
+We can then change the theme in a similar manner to how we changed the theme before:
 
+```{r}
 gf_histogram(~ adm_rate, data = colleges, color = 'black', bins = 25) %>%
   gf_labs(
     x = 'Admission Rate',
@@ -97,13 +102,17 @@ gf_histogram(~ adm_rate, data = colleges, color = 'black', bins = 25) %>%
     subtitle = 'Data Source: U.S. Department of Education College Scorecard'
     ) %>%
   gf_theme(theme_statthinking())
+```
 
-- To set a different theme as the default, we will use the theme_set() function and call our theme_statthinking() within this function:
+To set a different theme as the default, we will use the theme_set() function and call our theme_statthinking() within this function:
 
+```{r}
 theme_set(theme_statthinking())
+```
 
-- Now when we create a plot, it will automatically use the statthinking theme without having to specify this in the gf_theme() function:
+Now when we create a plot, it will automatically use the statthinking theme without having to specify this in the gf_theme() function:
 
+```{r}
 gf_histogram(~ adm_rate, data = colleges, color = 'black', bins = 25) %>%
   gf_labs(
     x = 'Admission Rate',
@@ -111,15 +120,19 @@ gf_histogram(~ adm_rate, data = colleges, color = 'black', bins = 25) %>%
     title = 'Distribution of admission rates for 2,000 institutions of higher education.',
     subtitle = 'Data Source: U.S. Department of Education College Scorecard'
     )
+```
 
-# Density plots
+1.2 Density plots
 
 This plot usually highlights similar distributional features as the histogram, but the visualization does not have the same dependency on the specification of bins:
 
+```{r}
 gf_density(~ adm_rate, data = colleges)
+```
 
 In fact, colleges that admit around 75% of their applicants have the highest probability density.
 
+```{r}
 gf_density(~ adm_rate, data = colleges, color = 'black', fill = 'cyan') %>%
   gf_labs(
     x = 'Admission Rate',
@@ -127,88 +140,109 @@ gf_density(~ adm_rate, data = colleges, color = 'black', fill = 'cyan') %>%
     title = 'Distribution of admission rates for 2,019 institutions of higher education.',
     subtitle = 'Data Source: U.S. Department of Education College Scorecard'
     )
-# Chapter 3
+```
 
-# Load packages
+2. Chapter 3
+
+Load packages:
+
+```{r}
 library(tidyverse)
 library(ggformula)
 library(mosaic)
 library(statthink)
+```
 
-3.1 Summarizing Attributes
+2.1 Summarizing Attributes
 
-df_stats(~ adm_rate, data = colleges, median)
+```{r}
+df_stats(~ adm_rate, data = colleges, median, mean)
+```
 
-df_stats(~ adm_rate, data = colleges, mean) 
+The mean is the only value we can use to “balance” the deviations. However, the mean is “pulled toward the tail"
 
-- The mean is the only value we can use to “balance” the deviations. However, the mean is “pulled toward the tail"
+2.2 Numerically Summarizing Variation
 
-3.3 Numerically Summarizing Variation
+Range is affected by extreme values
 
-- Range is affected by extreme values
-
+```{r}
 df_stats(~ adm_rate, data = colleges, min, max)
+```
 
-- Provide both percentiles separately
+Provide both percentiles separately
 
+```{r}
 colleges %>%
 df_stats(~ adm_rate, quantile(0.10), quantile(.90))
+```
 
-- Provide both percentiles in a single quantile() call
+Provide both percentiles in a single quantile() call
 
+```{r}
 colleges %>%
   df_stats(~ adm_rate, quantile(c(0.1, 0.9)))
-  
-- Interquartile Range (IQR)
+```
 
+Interquartile Range (IQR)
+
+```{r}
 colleges %>%
   df_stats(~ adm_rate, quantile(c(0.25, 0.75)))
   
 colleges %>%
   df_stats(~ adm_rate, min, quantile(c(0.25, 0.75)), max)
+```
   
-Although our sample of 2,019 institutions of higher education have wildy varying admissions rates (from 0% to 100%), the middle half of those institutions have admissions rates between 55% and 84%. We also note that the 25% of institutions with the lowest admissions rate range from 0% to 55%, while the 25% of institutions with the highest admissions rate range from only 84% to 100%
+Although our sample of 2,019 institutions of higher education have wildly varying admissions rates (from 0% to 100%), the middle half of those institutions have admissions rates between 55% and 84%. We also note that the 25% of institutions with the lowest admissions rate range from 0% to 55%, while the 25% of institutions with the highest admissions rate range from only 84% to 100%
 
+2.3 Boxplots
+
+```{r}
 gf_boxploth(0 ~ adm_rate, data = colleges, fill = "skyblue")  %>%
   gf_labs(x = "Admission rate")
+```
 
+We can combine the two types of graphs into a single one:
+
+```{r}
 gf_histogram(~ adm_rate, data = colleges, bins = 30) %>%
   gf_boxploth(160 ~ adm_rate, data = colleges, fill = "skyblue", width = 10) %>%
   gf_labs(x = "Admission rate", y = "Frequency")
+```
 
-3.3.4 Empirical Cumulative Density  
+2.4 Empirical Cumulative Density
 
+```{r}
 gf_ecdf(~ adm_rate, data = colleges) %>%
   gf_labs(x = "Admission rate", y = 'Cumulative proportion')
+```
 
-- an admission rate of 0.71 is associated with a cumulative proportion of 0.50; one-half of the admission rates in the distribution are at or below the value of 0.71.
+An admission rate of 0.71 is associated with a cumulative proportion of 0.50; one-half of the admission rates in the distribution are at or below the value of 0.71.
 
-3.3.5 Variance and Standard Deviation
+2.5 Variance and Standard Deviation
 
+```{r}
 colleges %>%
   df_stats(~ adm_rate, var, sd)
+```
 
-- In general, the standard deviation is more useful for describing the variation in a sample because it is in the same metric as the data. On average, the observations in the distribution are .211 units from the mean value of .682.
+In general, the standard deviation is more useful for describing the variation in a sample because it is in the same metric as the data. On average, the observations in the distribution are .211 units from the mean value of .682.
 
-- In general, most observations in a distribution fall within one standard deviation of the mean. So, for our example, most institutions have an admission rate that is between 47.1% and 89.3%.
+In general, most observations in a distribution fall within one standard deviation of the mean. So, for our example, most institutions have an admission rate that is between 47.1% and 89.3%.
 
-3.4 Summarizing Categorical Attributes
+2.6 Summarizing Categorical Attributes
 
-- Compute category counts
+Compute category counts
 
+```{r}
 tally(~region, data= colleges)
-
 tally(~region, data = colleges) / 2019
-
 tally(~region, data = colleges, format = "proportion")
+```
 
-3.5 Advanced Extension: Computing Your Own Measure of Variation
+3. Linear Regression
 
-
-
-
-
-1. First, we must load the libraries.
+First, we must load the libraries.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -227,6 +261,7 @@ us_weather <- mutate(us_weather, snow_factor = factor(snow),
 count(us_weather, location)
 ```
 
+Second, we should explore the relationship between the variables of interest
 
 ```{r}
 gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 3, alpha = .2) %>%
@@ -235,12 +270,14 @@ gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 3, alpha = .2
           y = "Minimum daily temperature (in F)")
 ```
 
-```{r}
+In addition, we can observe the Pearson's correlation coefficient to confirm the linear relationship
 
+```{r}
 cor(drybulbtemp_min ~ dewpoint_avg, data = us_weather, 
     use = 'complete.obs')
 ```
 
+After reviewing the variables, we can run the Linear model using:
 
 ```{r}
 temp_reg <- lm(drybulbtemp_min ~ dewpoint_avg, 
@@ -254,6 +291,8 @@ This depicts what the y-intercept is, the y-intercept represents the average min
 
 More generally, the y-intercept is the average value of the outcome when all of the attributes included in the linear regression are 0.
 
+We can also add extra features to the graph and observe the slope:
+
 ```{r}
 gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 3, alpha = .2) %>%
   gf_smooth(method = 'lm', size = 1) %>%
@@ -263,6 +302,7 @@ gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 3, alpha = .2
           y = "Minimum daily temperature (in F)")
 ```
 
+Now, let us see another relation between the minimum temperature and other independent variable:
 
 ```{r}
 sea_temp <- lm(drybulbtemp_min ~ sealevelpressure_avg, data = us_weather)
