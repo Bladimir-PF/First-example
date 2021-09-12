@@ -307,6 +307,12 @@ Now, let us see another relation between the minimum temperature and other indep
 ```{r}
 sea_temp <- lm(drybulbtemp_min ~ sealevelpressure_avg, data = us_weather)
 coef(sea_temp)
+
+
+gf_point(drybulbtemp_min ~ sealevelpressure_avg, data = us_weather, size = 3, alpha = .2) %>%
+  gf_smooth(method = 'lm', size = 1) %>%
+  gf_labs(x = "Average sea level pressure",
+          y = "Minimum daily temperature (in F)")
 ```
 
 Therefore, the linear relationship depicted above is extrapolated outside the range of the data (ie, decreased by 29.02 sea level units) which increases the temperature by 610.871 degrees Fahrenheit units.
@@ -327,21 +333,37 @@ gf_point(drybulbtemp_min ~ I(sealevelpressure_avg - mean(sealevelpressure_avg, n
 sealevel_reg_centered <- lm(drybulbtemp_min ~ I(sealevelpressure_avg - mean(sealevelpressure_avg, na.rm = TRUE)), 
          data = us_weather)
 coef(sealevel_reg_centered)
-
-df_stats(~sealevelpressure_avg, mean)
 ```
 
 The difference, is now the y-intercept is much smaller and would represent the mean minimum temperature when the mean-centered sea level pressure is 0 (ie., a value of 30.04 in the original metric).
 
 The value for the y-intercept also makes more intuitive sense, which can aid in model interpretation.
 
+We can also obtain the minimum-centering model
+
 ```{r}
 sealevel_reg_min <- lm(drybulbtemp_min ~ I(sealevelpressure_avg - min(sealevelpressure_avg, na.rm = TRUE)), 
          data = us_weather)
 coef(sealevel_reg_min)
 
+gf_point(drybulbtemp_min ~ I(sealevelpressure_avg - min(sealevelpressure_avg, na.rm = TRUE)), 
+         data = us_weather, size = 3, alpha = .2) %>%
+  gf_smooth(method = 'lm', size = 1) %>%
+  gf_labs(x = "Average daily sea level pressure",
+          y = "Minimum daily temperature (in F)")
+```
+
+and the max-centering model
+
+```{r}
 sealevel_reg_max <- lm(drybulbtemp_min ~ I(sealevelpressure_avg - max(sealevelpressure_avg, na.rm = TRUE)), 
          data = us_weather)
 coef(sealevel_reg_max)
+
+gf_point(drybulbtemp_min ~ I(sealevelpressure_avg - max(sealevelpressure_avg, na.rm = TRUE)), 
+         data = us_weather, size = 3, alpha = .2) %>%
+  gf_smooth(method = 'lm', size = 1) %>%
+  gf_labs(x = "Average daily sea level pressure",
+          y = "Minimum daily temperature (in F)")
 ```
 
