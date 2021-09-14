@@ -7,6 +7,11 @@ output: html_document
 
 *Description*: This package creates Word files (.doc files) containing APA style tables for several types of analyses. Using this package minimizes transcription errors and reduces the number commands needed by the user.
 
+```{r}
+library('apa')
+library('apaTables')
+```
+
 1. apa.1way.table
 
 Creates a table of means and standard deviations for a 1-way ANOVA design in APA style.
