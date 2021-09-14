@@ -26,33 +26,27 @@ We can use different commands to create data depending on the type of variables 
 
 *`rnorm`: random numbers clustered around a mean and sd, e.g. `rnorm(100, mean = 1500, sd= 100)`
 
-```{r, eval=FALSE}
-
-x(rnorm(100, mean = 120, sd= 100)
-c(rnorm(100, mean = 52, sd= 2)
-  
-t1 <- c(1,2,3)
-t2 <- c(3,2,1)
-
-tt <- data.frame(t1<-(rnorm(100, mean = 50, sd=12)), t2<-(rnorm(100, mean = 25, sd= 13)))
-
-  
-sasa <- as.data.frame(x(1,2,3), t(1,2,3))
-  
-  
-  xc <- as.data.frame(c(x<-(rnorm(100, mean = 120, sd= 100), c<-(rnorm(100, mean = 52, sd= 2))
-                      
-  df_stats(xc, mean, sd)
-```
-
-
 Let us use `sample` to create some variables.
 
 ```{r}
 age <- sample(250: 650, 150, replace = T)
 income <- sample(250: 1500, 6000, replace = T)
 SEG <- sample(250: 1, 4, replace = T)
-data <- data.frame(age, income)
+data1 <- data.frame(age, income, SEG)
+
+
+
+seg1 = group_by(data1, SEG)
+summarise(seg1, mean(age))
+
+data1%>%
+  group_by(SEG)%>%
+  summarise(mean(age))
+
+df_stats(~age, data = data1, mean, sd, var)
+
+cor_apa
+  
 ```
 
 If we want to enhance the reproducibility of our work, we can set a seed into the randomization. Thus, we will get always the same random numbers.

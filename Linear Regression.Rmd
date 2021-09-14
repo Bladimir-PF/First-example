@@ -293,7 +293,7 @@ More generally, the y-intercept is the average value of the outcome when all of 
 We can also add extra features to the graph and observe the slope:
 
 ```{r}
-gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 3, alpha = .2) %>%
+gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 2, alpha = .9) %>%
   gf_smooth(method = 'lm', size = 1) %>%
   gf_vline(xintercept = 0) %>%
   gf_hline(yintercept = 4.83) %>%
