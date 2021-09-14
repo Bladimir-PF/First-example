@@ -81,7 +81,6 @@ gf_histogram(~adm_rate, data = colleges, color= 'black', fill = 'yellow', bins =
   gf_theme(theme_classic())
 ```
 
-
 The theme, theme_statthinking() is included in the statthink library, a supplemental package to the text that can be installed and loaded with the following commands:
 
 ```{r}
@@ -179,7 +178,7 @@ df_stats(~ adm_rate, quantile(0.10), quantile(.90))
 Provide both percentiles in a single quantile() call
 
 ```{r}
-colleges %>%
+colleges%>%
   df_stats(~ adm_rate, quantile(c(0.1, 0.9)))
 ```
 
