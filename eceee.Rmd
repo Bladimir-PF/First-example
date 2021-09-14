@@ -33,20 +33,6 @@ age <- sample(250: 650, 150, replace = T)
 income <- sample(250: 1500, 6000, replace = T)
 SEG <- sample(250: 1, 4, replace = T)
 data1 <- data.frame(age, income, SEG)
-
-
-
-seg1 = group_by(data1, SEG)
-summarise(seg1, mean(age))
-
-data1%>%
-  group_by(SEG)%>%
-  summarise(mean(age))
-
-df_stats(~age, data = data1, mean, sd, var)
-
-cor_apa
-  
 ```
 
 If we want to enhance the reproducibility of our work, we can set a seed into the randomization. Thus, we will get always the same random numbers.
@@ -71,6 +57,14 @@ View(data) #you will see the rows and columns that make up your database
 summary(data) #you will see some descriptive statistics of the variables in your database 
 str(data) #you will see the structure of your database (variables, scale and some values)
 ```
+
+Data can also be observed based on groups
+
+```{r}
+seg1 = group_by(data1, SEG)
+summarise(seg1, mean(age))
+```
+
 
 After exploring the database as a unit, we can see the distribution of the variables.
 
