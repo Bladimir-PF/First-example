@@ -18,13 +18,33 @@ libraries(paq)
 ```
 
 Create some variables and a database. Then, run some descriptive statistics to explore the database.
-We can use different commands to create data depending on the type of variable we need. For instance:
+We can use different commands to create data depending on the type of variables we need. For instance:
 
-*`runif`: random rational numbers, e.g. `runif(100, min=0, max=1)`
+*`runif`: random rational numbers. By default it yields values between 0 a 1, but we can increase the range of expected values. e.g. `runif(100, min=0, max=2)`
 
 *`sample`: random integer numbers, e.g. `sample(18: 65, 100, replace = T)`
 
 *`rnorm`: random numbers clustered around a mean and sd, e.g. `rnorm(100, mean = 1500, sd= 100)`
+
+```{r, eval=FALSE}
+
+x(rnorm(100, mean = 120, sd= 100)
+c(rnorm(100, mean = 52, sd= 2)
+  
+t1 <- c(1,2,3)
+t2 <- c(3,2,1)
+
+tt <- data.frame(t1<-(rnorm(100, mean = 50, sd=12)), t2<-(rnorm(100, mean = 25, sd= 13)))
+
+  
+sasa <- as.data.frame(x(1,2,3), t(1,2,3))
+  
+  
+  xc <- as.data.frame(c(x<-(rnorm(100, mean = 120, sd= 100), c<-(rnorm(100, mean = 52, sd= 2))
+                      
+  df_stats(xc, mean, sd)
+```
+
 
 Let us use `sample` to create some variables.
 
