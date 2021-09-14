@@ -1,0 +1,6 @@
+---
+title: "Design of experiments"
+author: "Geraldo B. Padilla F."
+date: "12-09-2021"
+output: html_document
+---
