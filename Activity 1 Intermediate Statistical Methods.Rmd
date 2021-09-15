@@ -21,7 +21,7 @@ Specifically, we have the following guiding question: does the distance of the r
 
 1. In this vein, the first thing to do is exploring the distribution of the price of the rides (shape, center, variation, and/or extreme values)
 
-```{r}
+```{r, echo=FALSE}
 
 ```
 
