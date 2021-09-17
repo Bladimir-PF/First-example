@@ -81,7 +81,6 @@ gf_histogram(~adm_rate, data = colleges, color= 'black', fill = 'yellow', bins =
   gf_theme(theme_classic())
 ```
 
-
 The theme, theme_statthinking() is included in the statthink library, a supplemental package to the text that can be installed and loaded with the following commands:
 
 ```{r}
@@ -179,7 +178,7 @@ df_stats(~ adm_rate, quantile(0.10), quantile(.90))
 Provide both percentiles in a single quantile() call
 
 ```{r}
-colleges %>%
+colleges%>%
   df_stats(~ adm_rate, quantile(c(0.1, 0.9)))
 ```
 
@@ -294,7 +293,7 @@ More generally, the y-intercept is the average value of the outcome when all of 
 We can also add extra features to the graph and observe the slope:
 
 ```{r}
-gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 3, alpha = .2) %>%
+gf_point(drybulbtemp_min ~ dewpoint_avg, data = us_weather, size = 2, alpha = .9) %>%
   gf_smooth(method = 'lm', size = 1) %>%
   gf_vline(xintercept = 0) %>%
   gf_hline(yintercept = 4.83) %>%
