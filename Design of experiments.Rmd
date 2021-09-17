@@ -7,7 +7,7 @@ output:
   word_document: default
 ---
 
-<<<<<<< HEAD
+HEAD
 ```{r}
 rm(list = ls())    # Remove all objects (start with clean slate) 
 opar = par()       # Save default graphics parameters as opar
@@ -61,7 +61,6 @@ design[, "trtmt"]
 ```
 
 We could use `trtmt = rep(c(1, 2), each = 3)` to produce 6 treatments, 3 times each.
-
 
 
 # Plot WtLoss vs Soap, specify axis labels, suppress x-axis.
