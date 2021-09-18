@@ -2,8 +2,8 @@
 title: "<center> <h1>Activity 1</h1> </center>"
 author: "Geraldo B. Padilla F."
 output:
-  html_document: default
   word_document: default
+  html_document: default
 ---
 
 # Introduction
@@ -77,7 +77,9 @@ ride3[, 4]
 ```
 
 
-3. Third, based on the previous analysis, we can claim that the relationship between the two variables is non linear. At this point, it is worthy to recall that one thing is statistics results and another one is practical significance of the results. This means, according to the correlation coefficient, in fact, a positive linear relationship it is possible, but if we consider the visual representation of the relationship, this looks far away from a linear pattern.
+3. Third, based on the previous analysis, we can claim that the relationship between the two variables is non linear.
+
+At this point, it is worthy to recall that one thing is statistics results and another one is practical significance of the results. This means, according to the correlation coefficient, in fact, a positive linear relationship it is possible, but if we consider the visual representation of the relationship, this looks far away from a linear pattern.
 
 On top of that, the magnitude of the relationship is small, especially if we take into account the huge size of the sample (n=2.500).
 
@@ -90,45 +92,36 @@ However, in this case the intercept does not make much sense, because rides do n
 ```{r, echo=FALSE}
 ride_lm <- lm(price ~ distance, data = ride)
 coef(ride_lm)
-summary(distance)
 ```
 
 We could visualize some predicted values to better understand the regression results: 
 
-```{r, echo=FALSE}
-10.44 + 2.89 * 0.030 
-10.44 + 2.89 * 1.300
-10.44 + 2.89 * 2.275
-10.44 + 2.89 * 2.216
-10.44 + 2.89 * 2.860
-10.44 + 2.89 * 7.460
+```{r}
+10.44 + 2.89 * 0.030 #min
+10.44 + 2.89 * 1.300 #1st quart
+10.44 + 2.89 * 2.275 #median
+10.44 + 2.89 * 2.216 #mean
+10.44 + 2.89 * 2.860 #3rd quart
+10.44 + 2.89 * 7.460 #max
 ```
 
+Again, the linear regression shows that as the distance increases so does the price.
 
+5. Other way to analyze the relationship between price and distance is using the r-square and sigma, measures of variability.
 
+First, the r-squared equals 12,4%, that is, the distance just explains, approximately, the 12% of the price variability. On the other hand, the standard deviation of the observed prices (sigma) respect with the regression line is 8.77.
 
-summary(air_lm)$r.square
-summary(air_lm)$sigma
-
-
-Interpret the intercept and slope of the linear regression. That is, what do these terms mean?
-
-```{r, echo=FALSE, message=FALSE, eval=FALSE}
-sea_temp <- lm(drybulbtemp_min ~ sealevelpressure_avg, data = us_weather)
-coef(sea_temp)
+```{r, echo=FALSE, results='hide'}
+summary(ride_lm)$r.square
+summary(ride_lm)$sigma
 ```
 
-5. What are the r-squared and sigma estimates from the linear regression? Interpret these two values in the context of the problem. That is, what do these two terms mean in the context of the data and this problem?
+These results make more sense in the context of the problem. First, the r-squared looks small considering, first, the size of the sample and, second, the kind of relationship expected between price and distance. When we analyze something like the price of rides, it is normal to assume that distance is one of the main factors involved. Therefore, a higher r-square it was expected.
 
-```{r, echo=FALSE, message=FALSE, eval=FALSE}
-summary(wnba_reg)$r.square
-summary(wnba_reg)$sigma
-
-sigma_hat_square <- 563.9929 / (nrow(basketball) - 2)
-sigma_hat <- sqrt(sigma_hat_square)
-
-sigma_hat_square
-sigma_hat
+```{r, echo=FALSE, results='hide'}
+8.78/16.8
 ```
+
+In addition, the sigma estimates expresses the high dispersion observed in the first plot between price and distance. The difference between the observed prices and predicted ones is large (8.77), which means that the percentage error is 52.3%. Once more, the variability is higher than expected and opens the question about what variable can aid to improve the linear regression estimation.
 
 6. Finally, in a couple sentences, provide a summary of the overall model. Does the model appear to be useful to predict the price of a ride with only the distance of the ride? Use statistics from the analysis steps above to support your answer.
