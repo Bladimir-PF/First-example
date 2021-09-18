@@ -2,13 +2,11 @@
 title: "<center> <h1>Activity 1</h1> </center>"
 author: "Geraldo B. Padilla F."
 output:
-  word_document: default
   html_document: default
+  word_document: default
 ---
 
 # Introduction
-
-In this assignment, we will explore some relationship between variables in a data set referred to Uber and Lyft rideshares in Boston, MA. The data set is a random sample of n= 2.500 observations from 693.071 observations in the original database, available at <https://www.kaggle.com/brllrb/uber-and-lyft-dataset-boston-ma>
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/rideshare_small.csv'
@@ -19,68 +17,118 @@ libraries(paq)
 theme_set(theme_statthinking())
 ```
 
-Specifically, we have the following guiding question: does the distance of the ride explain variation in the price of the ride?
-
-1. In this vein, the first thing to do is exploring the distribution of the `price` (dependent variable) of the rides (shape, center, variation, and/or extreme values). The mean is $16.84, with a sd of $9.37.The range of values is ()
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
 list(ride)
 head(ride)
 str(ride)
 ```
 
+In this assignment, we will explore some relationship between variables in a data set referred to Uber and Lyft rideshares in Boston, MA. The data set is a random sample of n= 2.500 observations from 693.071 observations in the original database, available at <https://www.kaggle.com/brllrb/uber-and-lyft-dataset-boston-ma>
+
+Specifically, we have the following guiding question: does the distance of the ride explain variation in the price of the ride?
+
+1. In this vein, the first thing to do is exploring the distribution of the `price` (dependent variable) of the rides (shape, center, variation, and/or extreme values).
+
+The mean is $16.84, with a standard deviation of $9.37.The range of values is $59.5, and the IQR is $13.00.
+
+Table 1 shows descriptive statistics in detail:
 
 ```{r, echo=FALSE, message=FALSE}
-df_stats(~ price, data = ride, mean, min, max, median, sd, skewness, kurtosis, quantile(probs = c(0.25, 0.5, 0.9)))
-max(price)-min(price)
+df_stats(~ price, data = ride, mean, min, max, median, sd, skewness, kurtosis, quantile(probs = c(0.25, 0.75)))
 ```
 
+When exploring the Figure 1, `price` shows a positive skew. Moreover, the 50% of the values go from $9.50 up to $22.5.
 
-```{r, echo=FALSE, message=FALSE}
-df_stats(~ price, data = rsdata, mean, median, sd, skewness, kurtosis, quantile(probs = c(0.1, 0.5, 0.9)))
-```
+Figure 1
 
-```{r}
-
-```
-
-
-```{r, echo=FALSE, eval=FALSE}
-gf_histogram(~price, data = rsdata, color = 'black', fill = 'yellow', bins = 30) %>% 
-  gf_boxploth(380 ~ price, data = rsdata, fill = "skyblue", width = 12) %>%
+```{r, echo=FALSE}
+gf_histogram(~price, data = ride, color = 'black', fill = 'yellow', bins = 40) %>% 
+  gf_boxploth(330 ~ price, data = ride, fill = "skyblue", width = 12) %>%
   gf_labs(x = "Total price of the ride (in $)", y = 'Frequency')
+```
 
-gf_density(~price, data = rsdata) %>% 
-   gf_labs(x = "Total price of the ride (in $)")
+2. Second, we have to explore the bivariate distribution of the price of ride and distance of rides.
 
-()
-gf_histogram(~distance, data = rsdata)
+Based on Figure 2, it appears that there is no relationship between the two variables, or not a linear one at least. If we draw a line across the Figure, high variability is observed. On the other hand, there is a high concentration of both variables in the left-down part of the graph; maybe this is produced for the short length of the variable on the x-axis (distance), which is expressed in miles from 0.3 up to 7,46
+
+Figure 2
+
+```{r, echo=FALSE}
+gf_point(price ~ distance, data = ride, size = 4, alpha = .5) %>% 
+  gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
+  gf_labs(x = 'Distance of the ride',
+          y = "Total price of the ride (in $)")
+```
+
+We can also explore this relationship observing the Pearson's correlation coefficient, which is 0.353. This reinforce the previous analysis: the relationship is positive but the magnitude is regular or even small if we consider that among the set of variables in the data set, distance seemed the most relevant characteristic. 
+
+```{r, echo=FALSE, results='hide'}
+cor(price ~ distance, data = ride)
+```
+
+To dig deeper into this assumption, we could explore other correlations between different pairs of variables in the data set. According to the Table 2, the high correlation coefficient is between our two variables already analyzed (price and distance), followed by the surge multiplier for the cost of rides (surge_multiplier).
+
+Table 2
+
+```{r, echo=FALSE, message=FALSE}
+ride2 <- ride[,-1]
+ride3 <- round(cor(ride2),2)
+ride3[, 4]
 ```
 
 
-```{r}
-rsdatacor <- rsdata[,-1]
-rsdatacor2 <- round(cor(rsdatacor),2)
+3. Third, based on the previous analysis, we can claim that the relationship between the two variables is non linear. At this point, it is worthy to recall that one thing is statistics results and another one is practical significance of the results. This means, according to the correlation coefficient, in fact, a positive linear relationship it is possible, but if we consider the visual representation of the relationship, this looks far away from a linear pattern.
+
+On top of that, the magnitude of the relationship is small, especially if we take into account the huge size of the sample (n=2.500).
+
+4. To answer the guiding question, we can perform a linear regression under the assumption that  price (response) is a function of distance (predictor). The intercept is 10.44 and the slope is 2.89. But, what does this mean?
+
+Based on the sample, we can assume that price increases as distance does; more precisely, we could claim that for every single unit change on distance (portions of miles), price increases, on average, in $2.89. In absence of distance values, the price of rides is $10.44; this is the intercept, the value that dependent value takes when the independent variable equals zero.
+
+However, in this case the intercept does not make much sense, because rides do not have distance equals zero; in other words, if there is no distance, thus there is no payment. This a common problem in the interpretation of the intercept if linear regressions.
+
+```{r, echo=FALSE}
+ride_lm <- lm(price ~ distance, data = ride)
+coef(ride_lm)
+summary(distance)
+```
+
+We could visualize some predicted values to better understand the regression results: 
+
+```{r, echo=FALSE}
+10.44 + 2.89 * 0.030 
+10.44 + 2.89 * 1.300
+10.44 + 2.89 * 2.275
+10.44 + 2.89 * 2.216
+10.44 + 2.89 * 2.860
+10.44 + 2.89 * 7.460
 ```
 
 
-```{r}
-corrplot(rsdatacor2, method="number", type="upper")
-chart.Correlation(rsdatacor2, histogram = F, pch = 19)
+
+
+summary(air_lm)$r.square
+summary(air_lm)$sigma
+
+
+Interpret the intercept and slope of the linear regression. That is, what do these terms mean?
+
+```{r, echo=FALSE, message=FALSE, eval=FALSE}
+sea_temp <- lm(drybulbtemp_min ~ sealevelpressure_avg, data = us_weather)
+coef(sea_temp)
 ```
-
-```{r}
-rsdatacor %>%
-  group_by(month)%>%
-  mean(rsdata$prices)
-```
-
-2. Explore the bivariate distribution of the price of ride and distance of rides. In a few sentences, summarize key elements of the relationship between price and distance. You may wish to include the following elements of the association, strength, direction, and/or form.
-
-3. Does the association between price and distance of rides appear to be linear? Why or why not?
-
-4. Fit a linear regression to answer the research question highlighted above. Interpret the intercept and slope of the linear regression. That is, what do these terms mean?
 
 5. What are the r-squared and sigma estimates from the linear regression? Interpret these two values in the context of the problem. That is, what do these two terms mean in the context of the data and this problem?
+
+```{r, echo=FALSE, message=FALSE, eval=FALSE}
+summary(wnba_reg)$r.square
+summary(wnba_reg)$sigma
+
+sigma_hat_square <- 563.9929 / (nrow(basketball) - 2)
+sigma_hat <- sqrt(sigma_hat_square)
+
+sigma_hat_square
+sigma_hat
+```
 
 6. Finally, in a couple sentences, provide a summary of the overall model. Does the model appear to be useful to predict the price of a ride with only the distance of the ride? Use statistics from the analysis steps above to support your answer.

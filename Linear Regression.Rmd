@@ -366,3 +366,7 @@ gf_point(drybulbtemp_min ~ I(sealevelpressure_avg - max(sealevelpressure_avg, na
           y = "Minimum daily temperature (in F)")
 ```
 
+ride %>%
+group_by(month) %>%
+summarise(cor = cor(price ~ distance))%>%
+arrange(-cor)
