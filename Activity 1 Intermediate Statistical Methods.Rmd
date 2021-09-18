@@ -21,17 +21,22 @@ theme_set(theme_statthinking())
 
 Specifically, we have the following guiding question: does the distance of the ride explain variation in the price of the ride?
 
-1. In this vein, the first thing to do is exploring the distribution of the price of the rides (shape, center, variation, and/or extreme values)
+1. In this vein, the first thing to do is exploring the distribution of the `price` (dependent variable) of the rides (shape, center, variation, and/or extreme values). The mean is $16.84, with a sd of $9.37.The range of values is ()
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-list(rsdata)
-head(rsdata)
-str(rsdata)
+list(ride)
+head(ride)
+str(ride)
 ```
 
 
 ```{r, echo=FALSE, message=FALSE}
-summary(rsdata)
+df_stats(~ price, data = ride, mean, min, max, median, sd, skewness, kurtosis, quantile(probs = c(0.25, 0.5, 0.9)))
+max(price)-min(price)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
 df_stats(~ price, data = rsdata, mean, median, sd, skewness, kurtosis, quantile(probs = c(0.1, 0.5, 0.9)))
 ```
 
@@ -70,3 +75,12 @@ rsdatacor %>%
   mean(rsdata$prices)
 ```
 
+2. Explore the bivariate distribution of the price of ride and distance of rides. In a few sentences, summarize key elements of the relationship between price and distance. You may wish to include the following elements of the association, strength, direction, and/or form.
+
+3. Does the association between price and distance of rides appear to be linear? Why or why not?
+
+4. Fit a linear regression to answer the research question highlighted above. Interpret the intercept and slope of the linear regression. That is, what do these terms mean?
+
+5. What are the r-squared and sigma estimates from the linear regression? Interpret these two values in the context of the problem. That is, what do these two terms mean in the context of the data and this problem?
+
+6. Finally, in a couple sentences, provide a summary of the overall model. Does the model appear to be useful to predict the price of a ride with only the distance of the ride? Use statistics from the analysis steps above to support your answer.
