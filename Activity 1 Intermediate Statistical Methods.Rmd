@@ -1,9 +1,10 @@
 ---
 title: "<center> <h1>Activity 1</h1> </center>"
-author: "Geraldo B. Padilla F."
+author: ".."
 output:
-  html_document: default
+  pdf_document: default
   word_document: default
+  html_document: default
 ---
 
 # Introduction
@@ -31,13 +32,13 @@ Specifically, we have the following guiding question: does the distance of the r
 
 1. In this vein, the first thing to do is exploring the distribution of the `price` (dependent variable) of the rides (shape, center, variation, and/or extreme values).
 
-The mean is $16.84, with a standard deviation of $9.37.The range of values is $59.5, and the IQR is $13.00.
-
 Table 1 shows descriptive statistics in detail:
 
-```{r, echo=FALSE, message=FALSE}
-df_stats(~ price, data = ride, mean, min, max, median, sd, skewness, kurtosis, quantile(probs = c(0.25, 0.75)))
+```{r, message=FALSE}
+df_stats(~ price, data = ride, mean, min, max, median, sd, skewness, quantile(probs = c(0.25, 0.75)))
 ```
+
+The mean is $16.84, with a standard deviation of $9.37.The range of values is $59.5, and the IQR is $13.00.
 
 When exploring the Figure 1, `price` shows a positive skew. Moreover, the 50% of the values go from $9.50 up to $22.5.
 
@@ -49,87 +50,55 @@ gf_histogram(~price, data = ride, color = 'black', fill = 'yellow', bins = 40) %
   gf_labs(x = "Total price of the ride (in $)", y = 'Frequency')
 ```
 
-2. Second, we have to explore the bivariate distribution of the price of ride and distance of rides.
+The density plot shows two peaks, which could be signal of a bimodal distribution. 
 
-Based on Figure 2, it appears that there is no relationship between the two variables, or not a linear one at least. If we draw a line across the Figure, high variability is observed. On the other hand, there is a high concentration of both variables in the left-down part of the graph; maybe this is produced for the short length of the variable on the x-axis (distance), which is expressed in miles from 0.3 up to 7,46
+```{r, message=FALSE}
+gf_density(~ price, data = ride)
+```
+
+2. Second, the bivariate distribution of the price of ride and distance of rides can be shown as follow.
 
 Figure 2
 
-```{r, echo=FALSE}
+```{r}
 gf_point(price ~ distance, data = ride, size = 4, alpha = .5) %>% 
   gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
   gf_labs(x = 'Distance of the ride',
           y = "Total price of the ride (in $)")
 ```
 
-We can also explore this relationship observing the Pearson's correlation coefficient, which is 0.353. This reinforce the previous analysis: the relationship is positive but the magnitude is regular or even small if we consider that among the set of variables in the data set, distance seemed the most relevant characteristic. 
-
 ```{r, echo=FALSE, results='hide'}
 cor(price ~ distance, data = ride)
 ```
 
-To dig deeper into this assumption, we could explore other correlations between different pairs of variables in the data set. According to the Table 2, the high correlation coefficient is between our two variables already analyzed (price and distance), followed by the surge multiplier for the cost of rides (surge_multiplier).
+The relationship between price and distance, based on the Pearson's correlation coefficient, is 0.353. This shows a positive but weak and slightly linear relationship.
 
-Table 2
+3. Third, based on the previous analysis, the relationship between the two variables seems to be slightly linear, mainly because the correlation value is small.
 
-```{r, echo=FALSE, message=FALSE}
-ride2 <- ride[,-1]
-ride3 <- round(cor(ride2),2)
-ride3[, 4]
-```
+4. To answer the guiding question, a linear regression is performed under the assumption that  price (response) is a function of distance (predictor).
 
-
-3. Third, based on the previous analysis, we can claim that the relationship between the two variables is non linear.
-
-At this point, it is worthy to recall that one thing is statistics results and another one is practical significance of the results. This means, according to the correlation coefficient, in fact, a positive linear relationship it is possible, but if we consider the visual representation of the relationship, this looks far away from a linear pattern.
-
-On top of that, the magnitude of the relationship is small, especially if we take into account the huge size of the sample (n=2.500).
-
-4. To answer the guiding question, we can perform a linear regression under the assumption that  price (response) is a function of distance (predictor). Using the function lm in R [`lm(price ~ distance, data = ride)`], the intercept is 10.44 and the slope is 2.89. But, what does this mean?
-
-$$
-\hat{price} = 10.439 + 2.889 distance
-$$
-Based on the sample, we can assume that price increases as does the distance; more precisely, we could claim that for every single unit change on distance (portions of miles), price increases, on average, $2.89 (slope).
-In absence of distance, the price of rides would be, on average, $10.44; this is the intercept, the expected mean value of Y when X = 0
-
-However, in this case the intercept does not make much sense, because rides do not have distance equals zero; in other words, if there is no distance, thus there is no payment. This a common problem in the interpretation of the intercept of linear regressions.
-
-```{r, echo=FALSE}
+```{r}
 ride_lm <- lm(price ~ distance, data = ride)
 coef(ride_lm)
 ```
 
-We could visualize some predicted values to better understand the regression results:
+The intercept is 10.44 and the slope is 2.89. But, what does this mean?
 
-|Intercept | Slope | Values (#description) | $\hat{y_{i}}$|
-|:---------|:------|:----------------------|:--------------
-|10.44| + 2.89 |* 0.030 #min | 10.5267|
-|10.44| + 2.89 |* 1.300 #1st quart | 14.197|
-|10.44| + 2.89 |* 2.275 #median | 17.01475|
-|10.44| + 2.89 |* 2.216 #mean | 16.84424|
-|10.44| + 2.89 |* 2.860 #3rd quart | 18.7054|
-|10.44| + 2.89 |* 7.460 #max | 31.9994|
-
-Again, the linear regression shows that as the distance increases so does the price of the ride.
+$$
+\hat{price} = 10.439 + 2.889 distance
+$$
+For every single unit increase in distance (portions of miles), price increases, on average, by $2.89 (slope).
+In absence of distance, the price of rides would be, on average, $10.44.
 
 5. Other way to analyze the relationship between price and distance is using the r-square and sigma, measures of variability.
 
-First, the r-squared equals 12,4%, that is, the distance just explains, approximately, the 12% of the price variability. On the other hand, the standard deviation of the observed prices (sigma) respect with the regression line is $8.77. What else can we say about these results?
-
-```{r, echo=FALSE, results='hide'}
+```{r}
 summary(ride_lm)$r.square
 summary(ride_lm)$sigma
 ```
 
-In the context of the exercise, the r-squared looks small considering the size of the sample and the kind of relationship expected between price and distance. When we analyze something like the price of rides, it is normal to assume that distance is one of the main factors involved. If this does not happen, perhaps the measure was biased.
-
-```{r, echo=FALSE, results='hide'}
-8.78/16.8
-```
-
-In addition, the sigma estimate recall  the high dispersion observed in the first plot between price and distance. The difference between the observed prices and predicted ones using distance is large (8.77 units) around the regression line. Once more, the variability is higher than expected and opens the question about what variable(s) can aid to improve the linear regression estimation.
+First, the r-squared equals 12.4%, that is, the distance just explains, approximately, the 12% of the price variability. On the other hand, sigma shows that the observed prices varies from the predicted prices by  $8.77.
 
 6. Summary of the model
 
-In a nutshell, the current model does not fit the data correctly. To predict the prices of rides, distance appears to do not being enough. This is especially true if we consider the R^2^ = 12,4% and the variability around the regression line expressed by sigma. Problems is that exploring the correlation coefficients in the first question, we found no interesting relations between price and other variables included in the data set.
+In a nutshell, the current model does not fit the data correctly. To predict the prices of rides, distance appears not to be enough. This is especially true if we consider the R^2^ = 12.4% and the variability around the regression line expressed by sigma.
