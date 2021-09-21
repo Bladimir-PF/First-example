@@ -2,8 +2,8 @@
 title: "<center> <h1>Activity 1</h1> </center>"
 author: "Geraldo B. Padilla F."
 output:
-  word_document: default
   html_document: default
+  word_document: default
 ---
 
 # Introduction
@@ -94,18 +94,18 @@ ride_lm <- lm(price ~ distance, data = ride)
 coef(ride_lm)
 ```
 
-We could visualize some predicted values to better understand the regression results: 
+We could visualize some predicted values to better understand the regression results:
 
-```{r}
-10.44 + 2.89 * 0.030 #min
-10.44 + 2.89 * 1.300 #1st quart
-10.44 + 2.89 * 2.275 #median
-10.44 + 2.89 * 2.216 #mean
-10.44 + 2.89 * 2.860 #3rd quart
-10.44 + 2.89 * 7.460 #max
-```
+|Intercept | Slope | Values (#description) | $\hat{y_{i}}$|
+|:---------|:------|:----------------------|:--------------
+|10.44| + 2.89 |* 0.030 #min | 10.5267|
+|10.44| + 2.89 |* 1.300 #1st quart | 14.197|
+|10.44| + 2.89 |* 2.275 #median | 17.01475|
+|10.44| + 2.89 |* 2.216 #mean | 16.84424|
+|10.44| + 2.89 |* 2.860 #3rd quart | 18.7054|
+|10.44| + 2.89 |* 7.460 #max | 31.9994|
 
-Again, the linear regression shows that as the distance increases so does the price.
+Again, the linear regression shows that as the distance increases so does the price of the ride.
 
 5. Other way to analyze the relationship between price and distance is using the r-square and sigma, measures of variability.
 
