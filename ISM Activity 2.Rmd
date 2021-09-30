@@ -1,0 +1,76 @@
+---
+title: "Intermediate Statistical Methods"
+author: "Students"
+date: "9/30/2021"
+output: html_document
+subtitle: Activity 2
+---
+
+**Introduction**
+
+This activity explores the relationship between variables in a data set referred to Uber and Lyft rideshares in Boston, MA. The data set is a random sample of 2.500 observations from 693.071 cases in the original database, available at <https://www.kaggle.com/brllrb/uber-and-lyft-dataset-boston-ma>
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/rideshare_small.csv'
+ride<-read.csv(url(urlfile))
+library("easypackages")
+paq <- c('psqf6246stat6516','e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'dbplyer', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink')
+libraries(paq)
+theme_set(theme_statthinking())
+```
+
+**Guiding question**
+
+Does the distance of the ride explain variation in the price of the ride?
+
+1. This assignment uses the same data from the first activity. Take a few minutes to reacquaint yourself with this analysis, including the linear regression estimates obtained.
+
+```{r}
+ride_lm <- lm(price ~ distance, data = ride)
+coef(ride_lm)
+```
+
+The intercept is 10.44 and the slope is 2.89. The estimated price values will be:
+
+$$
+\hat{price} = 10.439 + 2.889 distance
+$$
+
+
+2. Was the intercept from the linear regression fitted in activity 1 using the raw data as is interpretable in the context of the data? Rephrasing slightly, could the intercept term be made more interpretable? If so, how?
+
+Table 1 shows the main descriptive statistics for the two variables included into the simple linear regression 
+
+```{r, message=FALSE}
+st1 <- df_stats(~ price, data = ride, mean, min, max, median, sd, skewness, quantile(probs = c(0.25, 0.75)))
+st2 <- df_stats(~ distance, data = ride, mean, min, max, median, sd, skewness, quantile(probs = c(0.25, 0.75)))
+st <- rbind(st1, st2)
+head(st)
+```
+
+Based on Table 
+
+3. Fit a modified linear regression that performs a centering. That is, center the distance in some fashion. Options could include, minimum, mean, median, maximum, etc centering. What changed for the estimates obtained from the model?
+
+```{r}
+ride <- ride %>%
+  mutate(distance_min = distance - min(distance))
+ride_lm_min <- lm(price ~ distance_min, data = ride)
+coef(ride_lm_min)
+coef(ride_lm)
+summary(ride_lm_min)$r.square
+summary(ride_lm_min)$sigma
+```
+Applying a minimum-centering transformation to the distance, the y-intercept becomes slightly more interpretable because now there is a value equals zero in the predictor variable. As the structural relationship between the two variables has not changed, the slope still being the same.
+
+4. Which model, the centered or the uncentered, do you feel has a stronger justification for its usage? Be as specific as possible in your rationale.
+Use whichever model you feel is the best from #3, then extract from software or compute the standard errors for the estimated regression coefficients. Interpret these standard errors in the context of the problem.
+
+the minimum-centering option gives a more intuitive interpretation.
+
+
+5. Compute confidence intervals for the two regression coefficients. Justify your choice for level of confidence and interpret the confidence interval.
+
+6. Finally, perform hypothesis testing for the two regression coefficients. In this, set up the null/alternative hypotheses and then interpret the statistical results to provide a statistical conclusion. More specifically, what does the hypothesis test suggest about the null and alternative hypotheses?
+
+The first part talked about the statistical conclusions, now compare/contrast this with practical conclusions. More specifically, would these results be useful in practice? Be as specific as possible in your response.
