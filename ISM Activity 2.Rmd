@@ -14,7 +14,7 @@ This activity explores the relationship between variables in a data set referred
 urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/rideshare_small.csv'
 ride<-read.csv(url(urlfile))
 library("easypackages")
-paq <- c('psqf6246stat6516','e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'dbplyer', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink')
+paq <- c('psqf6246stat6516','e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'dbplyer', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
 libraries(paq)
 theme_set(theme_statthinking())
 ```
@@ -28,6 +28,8 @@ Does the distance of the ride explain variation in the price of the ride?
 ```{r}
 ride_lm <- lm(price ~ distance, data = ride)
 coef(ride_lm)
+summary(ride_lm_min)$r.square
+summary(ride_lm_min)$sigma
 ```
 
 The intercept is 10.44 and the slope is 2.89. The estimated price values will be:
@@ -35,21 +37,21 @@ The intercept is 10.44 and the slope is 2.89. The estimated price values will be
 $$
 \hat{price} = 10.439 + 2.889 distance
 $$
-
+Moreover, the variability of prices accounted for distance is 12.44%, and the dispersion of the observed values of price respect with the predicted values by the model is, on average, $8.77.
 
 2. Was the intercept from the linear regression fitted in activity 1 using the raw data as is interpretable in the context of the data? Rephrasing slightly, could the intercept term be made more interpretable? If so, how?
 
-Table 1 shows the main descriptive statistics for the two variables included into the simple linear regression 
+Table 1
 
 ```{r, message=FALSE}
-st1 <- df_stats(~ price, data = ride, mean, min, max, median, sd, skewness, quantile(probs = c(0.25, 0.75)))
-st2 <- df_stats(~ distance, data = ride, mean, min, max, median, sd, skewness, quantile(probs = c(0.25, 0.75)))
+st1 <- df_stats(~ price, data = ride, mean, min, max, median, sd, quantile(probs = c(0.25, 0.75)))
+st2 <- df_stats(~ distance, data = ride, min, max, mean, median, sd, quantile(probs = c(0.25, 0.75)))
 st <- rbind(st1, st2)
 head(st)
 ```
 
-Based on Table 
-
+Some descriptive statistics for the two variables included into the simple linear regression are shown in the Table 1. The minimum value of distance is close to 0 (0.03), which does the y-intercept quite interpretable. However, a minimum-centering option could be performed to pull the values of distance at zero.
+  
 3. Fit a modified linear regression that performs a centering. That is, center the distance in some fashion. Options could include, minimum, mean, median, maximum, etc centering. What changed for the estimates obtained from the model?
 
 ```{r}
@@ -61,13 +63,63 @@ coef(ride_lm)
 summary(ride_lm_min)$r.square
 summary(ride_lm_min)$sigma
 ```
-Applying a minimum-centering transformation to the distance, the y-intercept becomes slightly more interpretable because now there is a value equals zero in the predictor variable. As the structural relationship between the two variables has not changed, the slope still being the same.
+
+Applying a minimum-centering transformation to the distance, the y-intercept becomes slightly more interpretable because now there is a value equals zero in the predictor variable. In this vein, when the distance equals zero, the price will be, on average, at $10.53.
+
+The new relationship look like:
+
+```{r}
+gf_point(price ~ distance_min, data = ride, size = 4, alpha = .15) %>%
+  gf_labs(x = "Distance of the ride",
+          y = "Price of the ride") %>%
+  gf_smooth() %>%
+  gf_smooth(method = 'lm', color = 'lightblue', linetype = 2)
+```
+
+A median-centering transformation is another useful option. In this case, the value zero in the y-intercept would represent the price that the 50% of the passengers paid on average for their rides. In practice, this interpretation of the y-intercept makes more sense than the minimum-centering alternative because people pay, in fact, for the distance they traveled.
+
+```{r}
+ride <- ride %>%
+  mutate(distance_mean = distance - mean(distance),
+         distance_median = distance - median(distance))
+ride_lm_mean <- lm(price ~ distance_mean, data = ride)
+ride_lm_median <- lm(price ~ distance_median, data = ride)
+coef(ride_lm_mean)
+coef(ride_lm_median)
+```
+the median-centering transformation look like:
+
+```{r}
+gf_point(price ~ distance_median, data = ride, size = 4, alpha = .15) %>%
+  gf_labs(x = "Distance of the ride (centered around the median)",
+          y = "Price of the ride") %>%
+  gf_smooth() %>%
+  gf_smooth(method = 'lm', color = 'lightblue', linetype = 2)
+```
+
+
+Under this version of the model, the y-intercept is $17.01, that is, when distance equals zero (centered around the median = 2.275) the price of the ride is, on average, $17.01.
+
+As the structural relationship between the two variables has not changed, the slope still being the same across the models.
 
 4. Which model, the centered or the uncentered, do you feel has a stronger justification for its usage? Be as specific as possible in your rationale.
 Use whichever model you feel is the best from #3, then extract from software or compute the standard errors for the estimated regression coefficients. Interpret these standard errors in the context of the problem.
 
-the minimum-centering option gives a more intuitive interpretation.
+The median-centering option gives the more intuitive interpretation. The minimum-centering model is also interesting, but the problem is that we do not know if people pay for rides without distance. Perhaps the rides have a baseline payment or charge for cancellation, cases which the distance equals zero, but both of them are just assumptions. On the contrary, the median-centering offers a practical interpretation.
 
+```{r}
+sum_x <- ride %>%
+    summarise(mean_distance_median = mean(distance_median),
+              sum_dev_x_sq = sum( (distance_median - mean_distance_median) ^ 2))
+sum_x
+se_b0 <- sqrt(summary(ride_lm_median)$sigma^2 * ((1 / nrow(ride)) + ( sum_x[['mean_distance_median']]^2 / sum_x[['sum_dev_x_sq']]) ))
+se_b1 <- sqrt(summary(ride_lm_median)$sigma^2 / sum_x[['sum_dev_x_sq']])
+
+se_b0
+se_b1
+```
+
+The standard errors (s.e.) of the estimated parameters are .17 for b0 and .15 for b1. This represents the uncertainty in the estimation of the population parameters B0 and B1. If another sample were extracted from the population, the expected variability between the current estimated parameters and the new ones, will be around .17 and .15 for b0 and b1 respectively.
 
 5. Compute confidence intervals for the two regression coefficients. Justify your choice for level of confidence and interpret the confidence interval.
 
