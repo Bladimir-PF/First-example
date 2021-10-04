@@ -3,18 +3,22 @@ title: "Intermediate Statistical Methods"
 author: "Students"
 date: "9/30/2021"
 output: html_document
+params:
+  x: 20
 subtitle: Activity 2
+bibliography: Biblio.bib
+csl: apa.csl.txt
 ---
 
 **Introduction**
 
-This activity explores the relationship between variables in a data set referred to Uber and Lyft rideshares in Boston, MA. The data set is a random sample of 2.500 observations from 693.071 cases in the original database, available at <https://www.kaggle.com/brllrb/uber-and-lyft-dataset-boston-ma>
+This activity explores the relationship between variables in a data set referred to Uber and Lyft rideshares in Boston, MA. The data set is a random sample of 2.500 observations from 693.071 cases in the original database, available at  <https://www.kaggle.com/brllrb/uber-and-lyft-dataset-boston-ma>
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/rideshare_small.csv'
 ride<-read.csv(url(urlfile))
 library("easypackages")
-paq <- c('psqf6246stat6516','e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'dbplyer', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
+paq <- c('e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
 libraries(paq)
 theme_set(theme_statthinking())
 ```
@@ -28,8 +32,8 @@ Does the distance of the ride explain variation in the price of the ride?
 ```{r}
 ride_lm <- lm(price ~ distance, data = ride)
 coef(ride_lm)
-summary(ride_lm_min)$r.square
-summary(ride_lm_min)$sigma
+summary(ride_lm)$r.square
+summary(ride_lm)$sigma
 ```
 
 The intercept is 10.44 and the slope is 2.89. The estimated price values will be:
@@ -38,6 +42,16 @@ $$
 \hat{price} = 10.439 + 2.889 distance
 $$
 Moreover, the variability of prices accounted for distance is 12.44%, and the dispersion of the observed values of price respect with the predicted values by the model is, on average, $8.77.
+
+Graphically, the relationship between price and distance look like:
+
+```{r}
+gf_point(price ~ distance, data = ride, size = 4, alpha = .15) %>%
+  gf_labs(x = "Distance of the ride",
+          y = "Price of the ride") %>%
+  gf_smooth() %>%
+  gf_smooth(method = 'lm', color = 'lightblue', linetype = 2)
+```
 
 2. Was the intercept from the linear regression fitted in activity 1 using the raw data as is interpretable in the context of the data? Rephrasing slightly, could the intercept term be made more interpretable? If so, how?
 
@@ -76,17 +90,15 @@ gf_point(price ~ distance_min, data = ride, size = 4, alpha = .15) %>%
   gf_smooth(method = 'lm', color = 'lightblue', linetype = 2)
 ```
 
-A median-centering transformation is another useful option. In this case, the value zero in the y-intercept would represent the price that the 50% of the passengers paid on average for their rides. In practice, this interpretation of the y-intercept makes more sense than the minimum-centering alternative because people pay, in fact, for the distance they traveled.
+A median-centering transformation is another useful option. In this case, the value zero in the y-intercept would represent the price that the 50% of the passengers paid on average for their rides. In practice, this interpretation of the y-intercept makes more sense than the minimum-centering alternative because people pay, in fact, for the distance traveled.
 
 ```{r}
 ride <- ride %>%
-  mutate(distance_mean = distance - mean(distance),
-         distance_median = distance - median(distance))
-ride_lm_mean <- lm(price ~ distance_mean, data = ride)
+  mutate(distance_median = distance - median(distance))
 ride_lm_median <- lm(price ~ distance_median, data = ride)
-coef(ride_lm_mean)
 coef(ride_lm_median)
 ```
+
 the median-centering transformation look like:
 
 ```{r}
@@ -97,15 +109,13 @@ gf_point(price ~ distance_median, data = ride, size = 4, alpha = .15) %>%
   gf_smooth(method = 'lm', color = 'lightblue', linetype = 2)
 ```
 
-
-Under this version of the model, the y-intercept is $17.01, that is, when distance equals zero (centered around the median = 2.275) the price of the ride is, on average, $17.01.
+Under this version of the model, the y-intercept is 17.01, that is, when distance equals zero (centered around the median = 2.275) the price of the ride is, on average, $17.01.
 
 As the structural relationship between the two variables has not changed, the slope still being the same across the models.
 
-4. Which model, the centered or the uncentered, do you feel has a stronger justification for its usage? Be as specific as possible in your rationale.
-Use whichever model you feel is the best from #3, then extract from software or compute the standard errors for the estimated regression coefficients. Interpret these standard errors in the context of the problem.
+4. Which model, the centered or the uncentered, do you feel has a stronger justification for its usage? Be as specific as possible in your rationale. Use whichever model you feel is the best from #3, then extract from software or compute the standard errors for the estimated regression coefficients. Interpret these standard errors in the context of the problem.
 
-The median-centering option gives the more intuitive interpretation. The minimum-centering model is also interesting, but the problem is that we do not know if people pay for rides without distance. Perhaps the rides have a baseline payment or charge for cancellation, cases which the distance equals zero, but both of them are just assumptions. On the contrary, the median-centering offers a practical interpretation.
+The median-centering option gives the more intuitive interpretation. The minimum-centering model is also interesting, but the problem is that we do not know if people pay for rides without have traveled. Maybe the rides have a baseline payment or charge for cancellation, in which cases the distance equals zero but there is a payment. However, both explanations are just assumptions. On the contrary, the median-centering offers a practical interpretation.
 
 ```{r}
 sum_x <- ride %>%
@@ -119,10 +129,66 @@ se_b0
 se_b1
 ```
 
-The standard errors (s.e.) of the estimated parameters are .17 for b0 and .15 for b1. This represents the uncertainty in the estimation of the population parameters B0 and B1. If another sample were extracted from the population, the expected variability between the current estimated parameters and the new ones, will be around .17 and .15 for b0 and b1 respectively.
+The standard errors (s.e.) of the estimated parameters are .17 for b0 and .15 for b1. This represents the uncertainty in the estimation of the population parameters B0 and B1. If another sample were extracted from the population, the expected variability between the current estimated parameters and the new ones will be around .17 and .15 for b0 and b1 respectively.
 
 5. Compute confidence intervals for the two regression coefficients. Justify your choice for level of confidence and interpret the confidence interval.
 
+```{r}
+coef(ride_lm_median)
+summary(ride_lm_median)$coefficients[,2]
+CI_b0 <- 17.013775 + c(-1, 1) * 1.96 * 0.1756361
+CI_b1 <- 2.889949 + c(-1, 1) * 1.96 * 0.1533785
+CI_b0
+CI_b1
+```
+
+The most common Confidence Interval in social sciences is at 95%, in other words, if we take repeated samples and construct the confidence interval for each sample, 95% of the intervals will contain the true unknown value of the parameter [@james2021statistical].
+
+The interpretation of both CI are as follow:
+
+- In the absence of any x value, the price will be, on average, somewhere between $16.67 and 17.36 (b0).
+- With 95% of certainty, a 1-mile increase in distance is associated with a price increase from $2.58 to 3.19 (b1).
+
+```{r}
+CI_b0_99 <- 17.013775 + c(-1, 1) * 2.58 * 0.1756361
+CI_b1_99 <- 2.889949 + c(-1, 1) * 2.58 * 0.1533785
+CI_b0_99
+CI_b1_99
+```
+
 6. Finally, perform hypothesis testing for the two regression coefficients. In this, set up the null/alternative hypotheses and then interpret the statistical results to provide a statistical conclusion. More specifically, what does the hypothesis test suggest about the null and alternative hypotheses?
 
+The null hypothesis for the parameters are as follow:
+
+$$
+H_{0}: \beta_{0} = 0.\ The\  population\  yintercept\  equals\  0.
+$$
+or
+
+$$ 
+H_{0}: \beta_{1} = 0.\ The\  population\  slope\  equals\  0.
+$$
+In both cases, the alternative hypothesis is that the parameters are different from zero.
+
+```{r}
+t_b0 = (17.013775 - 0) / 0.1756361
+t_b1 = (2.889949 - 0) / 0.1533785
+t_b0
+t_b1
+```
+
+Considering the test statistic results, in both cases the null hypothesis can be rejected. In particular, the test statistic of the estimated b0 (96.87) falls far away of the interval constructed with 95% of confidence; on the other hand, the test statistic of the estimated b1 (18.84) also falls out of the interval constructed at 95% of confidence.
+
+In addition, p-values support this interpretation of uncertainty in the estimation of parameters b0 and b1. According to the summary of the model, probably the B0 and B1 parameters are not equal zero in the population. Finally, based on the CI, test statistic and p-values, there is some relationship between price and distance. 
+
+```{r}
+summary(ride_lm_median)
+```
+
 The first part talked about the statistical conclusions, now compare/contrast this with practical conclusions. More specifically, would these results be useful in practice? Be as specific as possible in your response.
+
+The results of the median-centering model are useful to explain part of the variability of prices using the median of distance. In practice, it allows to estimate the average costs of rides and their increase based on distance.
+
+Passengers or user of Uber and/or Lyft in Boston could use this information to estimate the cost of their rides using the median of distance (2.275 miles) as a proxy of the average price they could pay.
+
+**References**
