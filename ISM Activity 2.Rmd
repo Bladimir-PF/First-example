@@ -10,6 +10,10 @@ bibliography: Biblio.bib
 csl: apa.csl.txt
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 **Introduction**
 
 This activity explores the relationship between variables in a data set referred to Uber and Lyft rideshares in Boston, MA. The data set is a random sample of 2.500 observations from 693.071 cases in the original database, available at  <https://www.kaggle.com/brllrb/uber-and-lyft-dataset-boston-ma>

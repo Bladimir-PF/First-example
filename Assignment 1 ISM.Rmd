@@ -1,0 +1,100 @@
+---
+title: "Assignment 1 ISM"
+author: "Geraldo B. Padilla F."
+date: "03-10-2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/salary_tuition.csv'
+tuition<-read.csv(url(urlfile))
+library("easypackages")
+paq <- c('e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
+libraries(paq)
+theme_set(theme_statthinking())
+```
+
+**Introduction**
+
+1. Identify a research question of interest that can use linear regression to answer the question.
+
+Guiding question: does the estimated early career pay (in USD) explain variation in the costs of Room and board (in USD)?
+
+2. Explore the research question you identified in #1 descriptively. In a few sentences, summarize any potential relationship, including statistical evidence (i.e., figures or statistics) to support your statements.
+
+To start with, let us explore the two variables included in the analysis:
+
+Table 1: 
+
+```{r}
+st1 <- df_stats(~ early_career_pay, data = tuition, min, max, mean, median, sd, quantile(probs = c(0.25, 0.75)))
+st2 <- df_stats(~ room_and_board, data = tuition, mean, min, max, median, sd, quantile(probs = c(0.25, 0.75)))
+st <- rbind(st1, st2)
+head(st)
+```
+
+According to the Table 1, the early career pay among universities is, on average, $51,150, with a sd of $7,974.06. On the other hand, students pay for room and board, on average, $10,925.71, with a sd of $2,762.78. The IQR of the early career pay is $9.100, and $3.932 is the IQR of room and board costs. One problem with these measures of variability is they depend on the scale of the original variables. To overcome this difficulty, coefficient of variations can be analyzed.
+
+```{r}
+(7974.058/51150.47)*100
+(2762.779/10925.71)*100
+```
+
+These results suggest that costs of room and board has more dispersion than early career pay.
+
+Figure 1:
+
+```{r}
+gf_histogram(~early_career_pay, data = tuition, color = 'black', fill = 'lightblue', bins = 40) %>%
+  gf_boxploth(90 ~ early_career_pay, data = tuition, fill = "gray", width = 5) %>%
+  gf_labs(x = "Early career pay (in $)", y = 'Frequency')
+```
+Figure 2:
+
+```{r}
+gf_histogram(~room_and_board, data = tuition, color = 'black', fill = 'lightblue', bins = 40) %>%
+  gf_boxploth(60 ~ room_and_board, data = tuition, fill = "gray", width = 3) %>%
+  gf_labs(x = "Costs of room and board (in $)", y = 'Frequency')
+```
+
+Graphically, the distribution of the early career pay is slightly right-skewed, as the distribution of costs of room and board seems bell-shaped.
+
+The Pearson's correlation coefficient between the two variables is .62, therefore, the relationship between costs of room and board and early career pay is positive, strong and possible linear.
+
+```{r}
+cor(room_and_board ~ early_career_pay, data = tuition)
+```
+
+Figure 3:
+
+```{r}
+gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5) %>% 
+  gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
+  gf_labs(x = 'Early career pay (in $)',
+          y = "Costs of room and board (in $)")
+```
+
+According to Figure 3, a straight line can be draw to depict the relationship between the two variables.
+
+3. Fit the linear regression to answer your question from #1. Interpret the regression coefficients in the context of the problem at hand. That is, what do the coefficients mean for the attributes included in the model.
+
+```{r}
+costs_lm <- lm(room_and_board ~ early_career_pay, data = tuition)
+coef(costs_lm)
+```
+
+4. Is the model intercept as interpretable as it could be? What could be done to enhance the interpretation of the intercept? Summarize in a few sentences any theory or data elements that may help to decide how to improve the interpretation of the intercept.
+
+5. Interpret the model estimates that show how well the model is performing. That is, what model statistics help to understand how well the model representing the outcome attribute? What do these statistics mean in the context of the problem?
+
+6. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. 2 pts
+
+7. Write out the null and alternative hypotheses based on your research question from #1.
+
+8 Summarize the statistical evidence surrounding the null or alternative hypotheses from question 7. In a few sentences, describe if the evidence provides support for or against the null hypothesis. Provide specific statistical evidence to support your justification.
+
+9. Based on the justification in #8, what practical implications does this result have? That is, are the statistical results that you have been describing/summarizing throughout this assignment practically relevant? Be as specific as you can in your discussion about why you believe the results are practically useful or not.
