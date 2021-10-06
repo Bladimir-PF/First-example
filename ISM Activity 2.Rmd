@@ -1,8 +1,11 @@
 ---
 title: "Intermediate Statistical Methods"
-author: "Students"
-date: "9/30/2021"
-output: html_document
+author: "Ahmed Bediwy (01466320); Mubarak Mojoyinola (01451893); Geraldo Padilla (01445225)"
+date: "10/06/2021"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
 params:
   x: 20
 subtitle: Activity 2
@@ -91,43 +94,36 @@ gf_point(price ~ distance_min, data = ride, size = 4, alpha = .15) %>%
   gf_smooth(method = 'lm', color = 'lightblue', linetype = 2)
 ```
 
-As the structural relationship between the two variables has not changed, the slope still being the same across the models.
+As the structural relationship between the two variables has not changed, the slope still being the same as the previous model.
 
 4. Which model, the centered or the uncentered, do you feel has a stronger justification for its usage? Be as specific as possible in your rationale. Use whichever model you feel is the best from #3, then extract from software or compute the standard errors for the estimated regression coefficients. Interpret these standard errors in the context of the problem.
 
-The minimum-centered transformation of the distance is the most intuitive option. It slightly affects the y-intercept and offers more advantages than disadvantages: there are no negative values in the distribution and any descriptive statistic (mean or median) can be used to analyze the relationship between distance and price.
+The minimum-centered transformation of the distance is the most intuitive option. It slightly affects the y-intercept and offers more advantages than disadvantages.
 
 ```{r}
-sum_x <- ride %>%
-    summarise(mean_distance_min = mean(distance_min),
-              sum_dev_x_sq = sum((distance_min - mean_distance_min)^2))
-sum_x
-se_b0 <- sqrt(summary(ride_lm_min)$sigma^2 * ((1 / nrow(ride)) + ( sum_x[['mean_distance_min']]^2 / sum_x[['sum_dev_x_sq']]) ))
-se_b1 <- sqrt(summary(ride_lm_min)$sigma^2 / sum_x[['sum_dev_x_sq']])
-
-se_b0
-se_b1
+summary <- summary(ride_lm_min)
+summary$coefficients[,2]
 ```
 
-The standard errors (s.e.) of the estimated parameters are .37 for b0 and .15 for b1. This represents the uncertainty in the estimation of the population parameters B0 and B1. If another sample were extracted from the population, the expected variability between the current estimated parameters and the new ones will be, on average, .37 and .15 for b0 and b1 respectively.
+The standard errors (s.e.) of the estimated parameters are .37 for b0 and .15 for b1. This represents the uncertainty in the estimation of the population parameters B0 and B1. If another sample were extracted from the population, the expected variability between the current estimated parameters and the new ones will be, on average, $.37 for price at the minimum distance value and $.15 per change in miles (distance).
 
 5. Compute confidence intervals for the two regression coefficients. Justify your choice for level of confidence and interpret the confidence interval.
 
 ```{r}
 coef(ride_lm_min)
-summary(ride_lm_min)$coefficients[,2] 
+summary(ride_lm_min)$coefficients[,2]
 CI_b0 <- 10.525840 + c(-1, 1) * 1.96 * 0.3784202
 CI_b1 <- 2.889949 + c(-1, 1) * 1.96 * 0.1533785
 CI_b0
 CI_b1
 ```
 
-The most common Confidence Interval in social sciences is at 95%, which means that if repeated samples were taken from the population, 95% of the new intervals will contain the true unknown value of the parameter B0 and B1 [@james2021statistical].
+The justification for using the 95% confidence level is to ensure the price payed by clients is within the estimated intervals 95% of the times.
 
 The interpretation of both CI are as follow:
 
-- In the absence of any x value, the price of the rides would be, on average, somewhere between $16.67 and 17.36 (b0).
-- With a 95% of confidence, a 1-mile increase in distance is associated with a price increase from $2.58 to 3.19 (b1).
+- At the minimum value of distance in miles, the price of the rides will be, on average, somewhere between $9.78 and $11.27 (b0).
+- With 95% of confidence, a 1-mile increase in distance is associated with a price increase from $2.59 to $3.19 (b1).
 
 6. Finally, perform hypothesis testing for the two regression coefficients. In this, set up the null/alternative hypotheses and then interpret the statistical results to provide a statistical conclusion. More specifically, what does the hypothesis test suggest about the null and alternative hypotheses?
 
@@ -150,9 +146,9 @@ t_b0
 t_b1
 ```
 
-Considering the t-statistic results, in both cases the null hypothesis can be rejected. In particular, the t-statistic of B0 (96.87) falls far away of the interval constructed with 95% of confidence; on the other hand, the t-statistic of B1 (18.84) also falls out of the interval constructed at 95% of confidence.
+Considering the t-statistic results, in both cases the null hypothesis can be rejected. In particular, the t-statistic of B0 (27.82) falls far away of the interval constructed with 95% of confidence; on the other hand, the t-statistic of B1 (18.84) also falls out of the interval constructed at 95% of confidence.
 
-In addition, p-values support this interpretation (<.001). In other words, probably the B0 and B1 parameters are not equal zero in the population. Finally, based on the CI, t-statistics and p-values, it can be concluded that there is some relationship between price and distance of rides. 
+In addition, p-values support this interpretation (<.001). In other words, the probability that B0 and B1 parameters equal zero in the population is below 0.001. Finally, based on the CI, t-statistics and p-values, it can be concluded that there is some relationship between price and distance of rides.
 
 ```{r}
 summary(ride_lm_min)
@@ -160,6 +156,4 @@ summary(ride_lm_min)
 
 The first part talked about the statistical conclusions, now compare/contrast this with practical conclusions. More specifically, would these results be useful in practice? Be as specific as possible in your response.
 
-The results of the minimum-centered model are useful to explain part of the variability of prices using the information of miles traveled (distance) In practice, would be useful for the users or clients of the apps.
-
-**References**
+Practically, there is non zero value for B0 because people pay after a minimum distance traveled. For the B1, the price increase for additional distance traveled.
