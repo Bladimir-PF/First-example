@@ -37,7 +37,7 @@ st <- rbind(st1, st2)
 head(st)
 ```
 
-According to the Table 1, the early career pay among universities is, on average, $51,150, with a sd of $7,974.06. On the other hand, students pay for room and board, on average, $10,925.71, with a sd of $2,762.78. The IQR of the early career pay is $9.100, and $3.932 is the IQR of room and board costs. One problem with these measures of variability is they depend on the scale of the original variables. To overcome this difficulty, coefficient of variations can be analyzed.
+According to Table 1, the early career pay among universities is, on average, $51,150, with a sd of $7,974.06. On the other hand, students pay for room and board, on average, $10,925.71, with a sd of $2,762.78. The IQR of the early career pay is $9.100, and $3.932 is the IQR of room and board costs. To compare the  variability between these two variables, the coefficient of variation (CV) can be calculated.
 
 ```{r}
 (7974.058/51150.47)*100
@@ -46,28 +46,46 @@ According to the Table 1, the early career pay among universities is, on average
 
 These results suggest that costs of room and board has more dispersion than early career pay.
 
-Figure 1:
+On the other hand, the both variables can be analyzed using plots. The distribution of early career pay is slightly right-skewed with some outliers above $70.000.
+
+Figure 1.1:
 
 ```{r}
-gf_histogram(~early_career_pay, data = tuition, color = 'black', fill = 'lightblue', bins = 40) %>%
-  gf_boxploth(90 ~ early_career_pay, data = tuition, fill = "gray", width = 5) %>%
+gf_histogram(~early_career_pay, data = tuition, color = 'black', fill = 'lightblue', bins = 50) %>%
+  gf_boxploth(65 ~ early_career_pay, data = tuition, fill = "gray", width = 3) %>%
   gf_labs(x = "Early career pay (in $)", y = 'Frequency')
 ```
-Figure 2:
+Figure 1.2
 
 ```{r}
-gf_histogram(~room_and_board, data = tuition, color = 'black', fill = 'lightblue', bins = 40) %>%
-  gf_boxploth(60 ~ room_and_board, data = tuition, fill = "gray", width = 3) %>%
+gf_density(~ early_career_pay, data = tuition) %>%
+  gf_labs(x = "Early career (in $)")
+```
+
+The distribution of costs of room and board seems more bell-shaped but leptokurtic.
+
+Figure 2.1:
+
+```{r}
+gf_histogram(~room_and_board, data = tuition, color = 'black', fill = 'lightblue', bins = 50) %>%
+  gf_boxploth(50 ~ room_and_board, data = tuition, fill = "gray", width = 3) %>%
   gf_labs(x = "Costs of room and board (in $)", y = 'Frequency')
 ```
 
-Graphically, the distribution of the early career pay is slightly right-skewed, as the distribution of costs of room and board seems bell-shaped.
+Figure 2.2
 
-The Pearson's correlation coefficient between the two variables is .62, therefore, the relationship between costs of room and board and early career pay is positive, strong and possible linear.
+```{r}
+gf_density(~ room_and_board, data = tuition) %>%
+  gf_labs(x = "Room and Board ($)")
+```
+
+The Pearson's correlation coefficient between the two variables is .62, therefore, the relationship between costs of room and board and early career pay is positive, strong and most possible linear.
 
 ```{r}
 cor(room_and_board ~ early_career_pay, data = tuition)
 ```
+
+The Figure 3 include a straight line across the relationship between the two variables.Although the positive correlation coefficient, the points show high variability.
 
 Figure 3:
 
@@ -78,18 +96,36 @@ gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5
           y = "Costs of room and board (in $)")
 ```
 
-According to Figure 3, a straight line can be draw to depict the relationship between the two variables.
-
 3. Fit the linear regression to answer your question from #1. Interpret the regression coefficients in the context of the problem at hand. That is, what do the coefficients mean for the attributes included in the model.
+
+Based on the results of the simple linear regression performed, the cost of Room and Board (RB) is, on average, -129.75 (b0) when the Early career pay (ECP) equals zero. The negative sign of the y-intercept it does not make much sense because in the context of the example there is no costs below 0. However, this estimated b0 is extrapolated until the 0 value of Early career pay (x-axis), which actual minimum value is 32,500.
 
 ```{r}
 costs_lm <- lm(room_and_board ~ early_career_pay, data = tuition)
 coef(costs_lm)
 ```
 
+$$
+\hat{RB} = -129.75 + .216 ECP
+$$
+
+On the other hand, the slope (b1) is 0.216. This can be interpreted as follows: for one unit increase in Early career pay (in USD), the cost of Room and board increase, on average, 0.216 dollars. In this case, the slope is small because of the metric of the independent variable. One unit change equals 1 dollar change, and may be using 1,000 units would be better. 
+
 4. Is the model intercept as interpretable as it could be? What could be done to enhance the interpretation of the intercept? Summarize in a few sentences any theory or data elements that may help to decide how to improve the interpretation of the intercept.
 
+The current y-intercept is clearly not much interpretable due to its negative sign. To enhance the intuitiveness of its interpretation, a linear transformation of the Early career pay can be performed. As the objective of this simple linear model is studying the relationship between the variables in the training set, a minimum-centering transformation would be the best option to analyze the data.
+
+The mean-centering transformation is another interesting option, but there is no theoretical assumptions or any framework that support this decision. In this case, the most practical transformation is the minimum-centering because it yields a more interpretable y-intercept and keep the model as simple as possible.
+
 5. Interpret the model estimates that show how well the model is performing. That is, what model statistics help to understand how well the model representing the outcome attribute? What do these statistics mean in the context of the problem?
+
+There are two statistics that aid to analyze the accuracy of the model. First, the Residual Standard Error (RSE), which expresses the average difference between the observed values of Room and Board and the predicted ones. In the context of this exercise, it can be state that the actual costs of Room and Board deviate from the regression line by approximately 2,161 USD, on average. One problem of RSE is that it does not make much sense because it depends on the metric of the dependent variable but there is no a clear interpretation about if the value expresses large or small variability.
+
+```{r}
+(summary <- summary(costs_lm))
+```
+
+Second, the R-squared represents the amount of variability in the costs of Room and Board accounted for by Early career pay. According to the summary of the model, 38.9% of the variability of Room and Board costs is explained by the Early career pay. Broadly speaking, it is a moderate result.
 
 6. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. 2 pts
 
