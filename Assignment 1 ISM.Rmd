@@ -2,7 +2,9 @@
 title: "Assignment 1 ISM"
 author: "Geraldo B. Padilla F."
 date: "03-10-2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/salary_tuition.csv'
 tuition<-read.csv(url(urlfile))
 library("easypackages")
-paq <- c('e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
+paq <- c('e1071','lubridate', 'mosaic', 'ggformula', 'broom', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
 libraries(paq)
 theme_set(theme_statthinking())
 ```
@@ -55,6 +57,7 @@ gf_histogram(~early_career_pay, data = tuition, color = 'black', fill = 'lightbl
   gf_boxploth(65 ~ early_career_pay, data = tuition, fill = "gray", width = 3) %>%
   gf_labs(x = "Early career pay (in $)", y = 'Frequency')
 ```
+
 Figure 1.2
 
 ```{r}
@@ -119,18 +122,129 @@ The mean-centering transformation is another interesting option, but there is no
 
 5. Interpret the model estimates that show how well the model is performing. That is, what model statistics help to understand how well the model representing the outcome attribute? What do these statistics mean in the context of the problem?
 
-There are two statistics that aid to analyze the accuracy of the model. First, the Residual Standard Error (RSE), which expresses the average difference between the observed values of Room and Board and the predicted ones. In the context of this exercise, it can be state that the actual costs of Room and Board deviate from the regression line by approximately 2,161 USD, on average. One problem of RSE is that it does not make much sense because it depends on the metric of the dependent variable but there is no a clear interpretation about if the value expresses large or small variability.
+There are two statistics that aid to analyze the accuracy of the model. First, the Residual Standard Error (RSE), which expresses the average difference between the observed values of Room and Board and the predicted ones by the model. In the context of this exercise, it can be state that the actual costs of Room and Board deviate from the regression line by approximately 2,161 USD, on average. However, one problem of RSE is that it does not make much sense by itself, It depends on the metric of the dependent variable but there is no a clear interpretation about if it is large or small.
 
 ```{r}
-(summary <- summary(costs_lm))
+summary(costs_lm)
 ```
 
-Second, the R-squared represents the amount of variability in the costs of Room and Board accounted for by Early career pay. According to the summary of the model, 38.9% of the variability of Room and Board costs is explained by the Early career pay. Broadly speaking, it is a moderate result.
+Second, the R-squared statistic. This represents the amount of variability in the costs of Room and Board accounted for by Early career pay. According to the summary of the model, 38.9% of the variability of Room and Board costs is explained by the Early career pay. Broadly speaking, it is a moderate result.
 
-6. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. 2 pts
+6. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. 2 pts.
+
+First, let us explore if the residuals ($y -\hat{y}$) are nearly normally distributed around the regression line. Raw residuals or standardized residuals can be used. Here, the latest type will be explored because of the intuitiveness of its distribution.
+
+Based on the density plot (Figure 4), the residuals appear quite normally distributed around the mean of zero. The distribution looks slightly left-skewed, however, the 95% of the residuals seem to fall properly within 2 standards deviations. 
+
+Figure 4
+
+```{r}
+norm_residuals <- augment(costs_lm)
+gf_density(~ .std.resid, data = norm_residuals) %>%
+  gf_labs(x = "Standardized Residuals")
+```
+
+This assumption can be also explore analyzing the match of the standardized residuals and theoretical percentiles. The standardized residuals closely follow  the line, so normality can be assumed again.
+
+Figure 5
+
+```{r}
+ggplot(norm_residuals, aes(sample = .std.resid)) + 
+  stat_qq(size = 5) + 
+  stat_qq_line(size = 2)
+```
+
+If these evidences are not enough, the Shapiro-Wilk test could be analyzed. Running the test on residuals, the null hypothesis can be maintained at the .05 level of significance. In other words, the p-value (<0.001) of the Shapiro-Wilk test suggests that residuals follow a normal distribution.
+
+```{r}
+shapiro.test(costs_lm$residuals)
+```
+
+Second, the homogeneity of variance. When the regression line is laid horizontal (blue line), a high variance across the fitted values. Analyzing the standardized residuals, most of the observations falls within 2 standard deviations (red lines). The error variance look roughly equal distributed above and below the line, despite some of the values fall far away of 2 sd. 
+
+Figure 6
+
+```{r}
+gf_point(.std.resid ~ .fitted, data = norm_residuals, size = 4, alpha = .4) %>%
+  gf_hline(yintercept = ~ 2, color = 'red', size = 1) %>%
+  gf_hline(yintercept = ~ -2, color = 'red', size = 1) %>%
+  gf_smooth(method = 'lm', size = 1.2) %>%
+  gf_labs(x = 'Fitted Values',
+          y = 'Standardized Residuals')
+```
+
+Third, influential points.Observing the plot of Cook's distance, there are some influential values in the Early career pay that could be affecting the regression estimate. Despite this finding, it is hard to decide whether or not to eliminate this cases from the data set. For instance, using the rule of thumb for greater than 1 Cook's distance, no one of the values should be removed.
+
+Figure 7
+
+```{r}
+plot(costs_lm,4)
+```
+In conclusion, the residuals are nearly normally distributed: the homogeneity of variance can be assumed but more exploration is needed using transformations; finally, there are some leverage points, but any Cook's distance is larger than 1, thus values should not be removed from the data set.
 
 7. Write out the null and alternative hypotheses based on your research question from #1.
 
-8 Summarize the statistical evidence surrounding the null or alternative hypotheses from question 7. In a few sentences, describe if the evidence provides support for or against the null hypothesis. Provide specific statistical evidence to support your justification.
+$$
+H_{0}: = \ Room \ and \ board \ is \ independent \ from \ Early \ career \ pay
+$$
+$$
+H_{A}: = \ Early \ career \ pay \ predicts \ some \ variation \ of \ room \ and \ board
+$$
+
+More formally, the null hypothesis tend to be presented as follow:
+
+$$
+H_{0}: \beta_{0} = 0 = \ The\  population\  yintercept\  equals\  0.
+$$
+
+or 
+
+$$ 
+H_{0}: \beta_{1} = 0 = \ The\  population\  slope\  equals\  0.
+$$
+
+These two last null hypothesis are expression of null effect between the variables.
+
+On the other hand, the alternative hypothesis can be state as follow:
+
+$$ 
+H_{A}: \beta_{0} \neq 0 = \ The\  population\  yintercept\  is\  not\  equal\  to\  0.
+$$
+
+or 
+
+$$ 
+H_{A}: \beta_{1} \neq 0 = \ The\  population\  slope\  is\  not\  equal\  to\  0. 
+$$
+
+8. Summarize the statistical evidence surrounding the null or alternative hypotheses from question 7. In a few sentences, describe if the evidence provides support for or against the null hypothesis. Provide specific statistical evidence to support your justification.
+
+The objective is to determine whether there is a relationship between Room and board costs and Early career pay. More specific, if the Early career pay helps to predict the variability in the Room and board costs that students have to pay. This can be supported or challenged via different alternatives. On of them is constructing Confidence Intervals for the parameters estimated.
+
+Based on this results. with 95% of confidence, we fail to reject the null hypothesis in the case f the  y-intercept but can reject it in the case of the slope. Let us analyse this in more detail.
+
+
+```{r}
+sum_x <- tuition %>%
+    summarise(mean_early = mean(early_career_pay),
+              sum_dev_x_sq = sum( (early_career_pay - mean_early) ^ 2))
+se_b0 <- sqrt(summary(costs_lm)$sigma^2 * ((1 / nrow(tuition)) + ( sum_x[['mean_early']]^2 / sum_x[['sum_dev_x_sq']]) ))
+se_b1 <- sqrt(summary(costs_lm)$sigma^2 / sum_x[['sum_dev_x_sq']])
+(CI_b0 <- -129.7551288 + c(-1, 1) * 1.96 * 517.0658)
+(CI_b1 <- 0.2161361 + c(-1, 1) * 1.96 * 0.009988239)
+```
+The C.I. of the y-intercept, constructed with 95% of confidence, is 1143.2041 - 883.6938, which means that the costs of Roam and board costs  will fall, on average, between -1143.20 and   883.69 when the Early career pay equals zero. On the other hand, with 95% of confidence, one unit increase in Early career pay (one dollar increase) increase the Roam and board costs, on average, from 0.20 to 0.24. On top of that, as the first C.I. (95%) does contain zero, thus the β0 is not significantly different from 0. Conversely, as the second C.I. (95%) does not contain zero, We can conclude that the slope β1 is significantly different from zero at the .05 level.
+
+```{r}
+summary(costs_lm)
+```
+
+This interpretations are supported by the p-values. Based on the summary of the model, the p-value of the y-intercept is larger (0.802) than the accepted level of statistical significance (0.05), thus most probably the value of β0 in the population is close to zero. Moreover, the p-value of β1 (<0.001) indicates that there is a low probability of observing this value by chance under the null.
 
 9. Based on the justification in #8, what practical implications does this result have? That is, are the statistical results that you have been describing/summarizing throughout this assignment practically relevant? Be as specific as you can in your discussion about why you believe the results are practically useful or not.
+
+We have found that, in the current status of the model, the y-intercept is not significant different from zero. Some kind of linear or statistical transformation should be explored in order to improve this situation. In the case of the slope, evidence about statistical significance was provided, which means that Early career pay affects the costs of Room and board.
+
+Now, in practical terms we could conclude that for one dollar increase in the early career pay, the room and board costs increase, on average, in .216. Of course, a more interpretable option would be decrease the metric of the predictor variable, for example, dividing the values by 1.000.
+
+The results are useful, especially if the correlation coefficient and estimated slope are considered. The early career pay increase the costs of room and board, and that is something that students should take into account when make their decisions about where studying.
