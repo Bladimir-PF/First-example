@@ -28,7 +28,7 @@ Guiding question: does the estimated early career pay (in USD) explain variation
 
 2. Explore the research question you identified in #1 descriptively. In a few sentences, summarize any potential relationship, including statistical evidence (i.e., figures or statistics) to support your statements.
 
-To start with, let us explore the two variables included in the analysis:
+To begin with, let us explore the two variables included in the analysis:
 
 Table 1: 
 
@@ -39,16 +39,18 @@ st <- rbind(st1, st2)
 head(st)
 ```
 
-According to Table 1, the early career pay among universities is, on average, $51,150, with a sd of $7,974.06. On the other hand, students pay for room and board, on average, $10,925.71, with a sd of $2,762.78. The IQR of the early career pay is $9.100, and $3.932 is the IQR of room and board costs. To compare the  variability between these two variables, the coefficient of variation (CV) can be calculated.
+According to Table 1, the early career pay among universities is, on average, 51,150, with a sd of 7,974.06. On the other hand, costs for room and board are, on average, 10,925.71, with a sd of 2,762.78. The IQR for early career pay is 9.100, and 3.932 is the IQR of room and board. For both variables, the median and mean are similar, suggesting near-normal distributions.
+
+To compare the  variability between these two variables, the coefficient of variation (CV) can be calculated.
 
 ```{r}
 (7974.058/51150.47)*100
 (2762.779/10925.71)*100
 ```
 
-These results suggest that costs of room and board has more dispersion than early career pay.
+CV is an indicator of variability ranging from 0 to 1. In the context of this example, room and board costs have more dispersion than early career salary pay.
 
-On the other hand, the both variables can be analyzed using plots. The distribution of early career pay is slightly right-skewed with some outliers above $70.000.
+Moreover, both variables can be analyzed using graphs The distribution of early career pay is slightly right-skewed, with some outliers above $70.000.
 
 Figure 1.1:
 
@@ -65,7 +67,7 @@ gf_density(~ early_career_pay, data = tuition) %>%
   gf_labs(x = "Early career (in $)")
 ```
 
-The distribution of costs of room and board seems more bell-shaped but leptokurtic.
+The distribution of room and board costs appears more bell-shaped but leptokurtic.
 
 Figure 2.1:
 
@@ -82,13 +84,13 @@ gf_density(~ room_and_board, data = tuition) %>%
   gf_labs(x = "Room and Board ($)")
 ```
 
-The Pearson's correlation coefficient between the two variables is .62, therefore, the relationship between costs of room and board and early career pay is positive, strong and most possible linear.
+The Pearson correlation coefficient between the two variables is .62, thus the relationship between room and board and early career pay is positive, strong and quite possibly linear.
 
 ```{r}
 cor(room_and_board ~ early_career_pay, data = tuition)
 ```
 
-The Figure 3 include a straight line across the relationship between the two variables.Although the positive correlation coefficient, the points show high variability.
+Figure 3 includes a straight line through the relationship between the two variables.Although the correlation coefficient is positive, the points show a large variability.
 
 Figure 3:
 
@@ -101,7 +103,7 @@ gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5
 
 3. Fit the linear regression to answer your question from #1. Interpret the regression coefficients in the context of the problem at hand. That is, what do the coefficients mean for the attributes included in the model.
 
-Based on the results of the simple linear regression performed, the cost of Room and Board (RB) is, on average, -129.75 (b0) when the Early career pay (ECP) equals zero. The negative sign of the y-intercept it does not make much sense because in the context of the example there is no costs below 0. However, this estimated b0 is extrapolated until the 0 value of Early career pay (x-axis), which actual minimum value is 32,500.
+From the results of the simple linear regression performed, the costs of Room and Board (RB) is, on average, -129.75 (b0) when the Early career pay (ECP) equals zero. In this context, the negative sign of the y-intercept does not make much sense because in reality there are no costs below 0. This is because the estimate of b0 is extrapolated to the 0 value of Early career pay (x-axis), whose actual minimum value is 32,500.
 
 ```{r}
 costs_lm <- lm(room_and_board ~ early_career_pay, data = tuition)
@@ -112,29 +114,31 @@ $$
 \hat{RB} = -129.75 + .216 ECP
 $$
 
-On the other hand, the slope (b1) is 0.216. This can be interpreted as follows: for one unit increase in Early career pay (in USD), the cost of Room and board increase, on average, 0.216 dollars. In this case, the slope is small because of the metric of the independent variable. One unit change equals 1 dollar change, and may be using 1,000 units would be better. 
+On the other hand, the slope (b1) is 0.216. This can be interpreted as follows: for a one-unit increase in Early career pay (in USD), the cost of Room and board increases, on average, by 0.216. In this case, the slope is small due to the metric of the independent variable, whose values are expressed in 1.000 units.
 
 4. Is the model intercept as interpretable as it could be? What could be done to enhance the interpretation of the intercept? Summarize in a few sentences any theory or data elements that may help to decide how to improve the interpretation of the intercept.
 
-The current y-intercept is clearly not much interpretable due to its negative sign. To enhance the intuitiveness of its interpretation, a linear transformation of the Early career pay can be performed. As the objective of this simple linear model is studying the relationship between the variables in the training set, a minimum-centering transformation would be the best option to analyze the data.
+It is evident that the current y-intercept is poorly interpretable due to its negative sign. To improve the intuitiveness of its interpretation, a linear transformation of the Early career pay can be performed. Since the objective of this simple linear model is to study the relationship between two variables from an example, a minimum-centering transformation would be the best option to analyze the data.
 
-The mean-centering transformation is another interesting option, but there is no theoretical assumptions or any framework that support this decision. In this case, the most practical transformation is the minimum-centering because it yields a more interpretable y-intercept and keep the model as simple as possible.
+The mean-centering transformation is another interesting option, but there are no theoretical assumptions or framework to support this decision. In this case, the most practical transformation is the minimum-centering because it produces a more interpretable y-intercept and keeps the model as simple as possible.
 
 5. Interpret the model estimates that show how well the model is performing. That is, what model statistics help to understand how well the model representing the outcome attribute? What do these statistics mean in the context of the problem?
 
-There are two statistics that aid to analyze the accuracy of the model. First, the Residual Standard Error (RSE), which expresses the average difference between the observed values of Room and Board and the predicted ones by the model. In the context of this exercise, it can be state that the actual costs of Room and Board deviate from the regression line by approximately 2,161 USD, on average. However, one problem of RSE is that it does not make much sense by itself, It depends on the metric of the dependent variable but there is no a clear interpretation about if it is large or small.
+There are two statistics that help to analyze the accuracy of the model. First, the Residual Standard Error (RSE), which expresses the average difference between the observed values of Room and Board and those predicted by the model. In the context of this exercise, it can be stated that the actual costs of Room and Board deviate from the regression line by approximately 2,161, on average.
+
+However, one of the problems with RSE is that it does not make much sense on its own because there is no clear interpretation of whether it is large or small.
 
 ```{r}
 summary(costs_lm)
 ```
 
-Second, the R-squared statistic. This represents the amount of variability in the costs of Room and Board accounted for by Early career pay. According to the summary of the model, 38.9% of the variability of Room and Board costs is explained by the Early career pay. Broadly speaking, it is a moderate result.
+Second, the R-squared statistic. This represents the amount of variability in Room and Board costs accounted for by Early career pay. According to the model summary, 38.9% of the variability of Room and Board costs is explained by Early career pay. Broadly speaking, this is a moderate result.
 
 6. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. 2 pts.
 
-First, let us explore if the residuals ($y -\hat{y}$) are nearly normally distributed around the regression line. Raw residuals or standardized residuals can be used. Here, the latest type will be explored because of the intuitiveness of its distribution.
+First, let us explore if the residuals ($y -\hat{y}$) are nearly normally distributed around the regression line. Either raw residuals or standardized residuals can be used; the latter type will be explored here because of its intuitive distribution.
 
-Based on the density plot (Figure 4), the residuals appear quite normally distributed around the mean of zero. The distribution looks slightly left-skewed, however, the 95% of the residuals seem to fall properly within 2 standards deviations. 
+Based on the density plot (Figure 4), the residuals appear to have a fairly normal distribution. The values appear slightly left-skewed, but the 95% of the residuals seem to be well distributed within 2 standards deviations. 
 
 Figure 4
 
@@ -144,7 +148,7 @@ gf_density(~ .std.resid, data = norm_residuals) %>%
   gf_labs(x = "Standardized Residuals")
 ```
 
-This assumption can be also explore analyzing the match of the standardized residuals and theoretical percentiles. The standardized residuals closely follow  the line, so normality can be assumed again.
+This assumption can also be explored by analyzing the coincidence of the standardized residuals and theoretical percentiles. The standardized residuals follow  the line closely, so normality can again be assumed.
 
 Figure 5
 
@@ -154,13 +158,13 @@ ggplot(norm_residuals, aes(sample = .std.resid)) +
   stat_qq_line(size = 2)
 ```
 
-If these evidences are not enough, the Shapiro-Wilk test could be analyzed. Running the test on residuals, the null hypothesis can be maintained at the .05 level of significance. In other words, the p-value (<0.001) of the Shapiro-Wilk test suggests that residuals follow a normal distribution.
+If these evidences are not sufficient, the Shapiro-Wilk test can be analyzed. Running the test on theresiduals, the null hypothesis can be maintained at the .05 of significance level. In other words, the p-value (<0.001) of the Shapiro-Wilk test suggests that the residuals follow a normal distribution.
 
 ```{r}
 shapiro.test(costs_lm$residuals)
 ```
 
-Second, the homogeneity of variance. When the regression line is laid horizontal (blue line), a high variance across the fitted values. Analyzing the standardized residuals, most of the observations falls within 2 standard deviations (red lines). The error variance look roughly equal distributed above and below the line, despite some of the values fall far away of 2 sd. 
+Second, the homogeneity of the variance. When the regression line is laid horizontal (blue line), a high variance in the fitted values is observed. When analyzing the standardized residuals, most observations falls within 2 standard deviations (red lines). The error variance appears approximately equally distributed above and below the line, even though some of the values fall far from 2 sd. 
 
 Figure 6
 
@@ -173,14 +177,15 @@ gf_point(.std.resid ~ .fitted, data = norm_residuals, size = 4, alpha = .4) %>%
           y = 'Standardized Residuals')
 ```
 
-Third, influential points.Observing the plot of Cook's distance, there are some influential values in the Early career pay that could be affecting the regression estimate. Despite this finding, it is hard to decide whether or not to eliminate this cases from the data set. For instance, using the rule of thumb for greater than 1 Cook's distance, no one of the values should be removed.
+Third, the influential points. Looking at the Cook's distance plot, there are some influential values in Early career pay that could be affecting the regression estimate. Despite this finding, it is difficult to decide whether or not to remove these cases from the data set. For instance, using the rule of thumb for greater than 1 Cook's distance, none of the values should be removed.
 
 Figure 7
 
 ```{r}
 plot(costs_lm,4)
 ```
-In conclusion, the residuals are nearly normally distributed: the homogeneity of variance can be assumed but more exploration is needed using transformations; finally, there are some leverage points, but any Cook's distance is larger than 1, thus values should not be removed from the data set.
+
+In conclusion, the residuals are almost normally distributed: homogeneity of variance can be assumed, but needs to be further explore; finally, there are some leverage points, but any Cook's distance is larger than 1, thus values should not be removed from the data set.
 
 7. Write out the null and alternative hypotheses based on your research question from #1.
 
@@ -219,9 +224,9 @@ $$
 
 8. Summarize the statistical evidence surrounding the null or alternative hypotheses from question 7. In a few sentences, describe if the evidence provides support for or against the null hypothesis. Provide specific statistical evidence to support your justification.
 
-The objective is to determine whether there is a relationship between Room and board costs and Early career pay. More specific, if the Early career pay helps to predict the variability in the Room and board costs that students have to pay. This can be supported or challenged via different alternatives. On of them is constructing Confidence Intervals for the parameters estimated.
+The objective is to determine whether there is a relationship between Room and board costs and Early career pay. More specifically, if the Early career pay helps to predict the variability of Room and board costs that students have to pay. This can be supported or questioned through different alternatives. On of them is to construct Confidence Intervals for the estimated parameters b0 and b1.
 
-Based on this results. with 95% of confidence, we fail to reject the null hypothesis in the case f the  y-intercept but can reject it in the case of the slope. Let us analyse this in more detail.
+Based on these results. with 95% confidence, we fail to reject the null hypothesis in the case of the  y-intercept, but we can reject it in the case of the slope. Let us analyze this in more detail.
 
 
 ```{r}
@@ -233,18 +238,19 @@ se_b1 <- sqrt(summary(costs_lm)$sigma^2 / sum_x[['sum_dev_x_sq']])
 (CI_b0 <- -129.7551288 + c(-1, 1) * 1.96 * 517.0658)
 (CI_b1 <- 0.2161361 + c(-1, 1) * 1.96 * 0.009988239)
 ```
-The C.I. of the y-intercept, constructed with 95% of confidence, is 1143.2041 - 883.6938, which means that the costs of Roam and board costs  will fall, on average, between -1143.20 and   883.69 when the Early career pay equals zero. On the other hand, with 95% of confidence, one unit increase in Early career pay (one dollar increase) increase the Roam and board costs, on average, from 0.20 to 0.24. On top of that, as the first C.I. (95%) does contain zero, thus the β0 is not significantly different from 0. Conversely, as the second C.I. (95%) does not contain zero, We can conclude that the slope β1 is significantly different from zero at the .05 level.
+
+The C.I. of the y-intercept, constructed with 95% confidence, is 1143.2041 - 883.6938, which means that Roam and board costs  will fall, on average, between -1143.20 and 883.69 when Early career pay equals zero. On the other hand, with 95% confidence, a one unit increase in Early career pay (one dollar increase) increases Roam and board costs, on average, from 0.20 to 0.24. Moreover, since the first C.I. (95%) does contain zero, the β0 is not significantly different from 0. Conversely, as the second C.I. (95%) does not contain zero, We can conclude that the slope β1 is significantly different from zero at the .05 level.
 
 ```{r}
 summary(costs_lm)
 ```
 
-This interpretations are supported by the p-values. Based on the summary of the model, the p-value of the y-intercept is larger (0.802) than the accepted level of statistical significance (0.05), thus most probably the value of β0 in the population is close to zero. Moreover, the p-value of β1 (<0.001) indicates that there is a low probability of observing this value by chance under the null.
+These interpretations are supported by the p-values. According to the model summary, the p-value of the y-intercept is larger (0.802) than the accepted level of statistical significance (0.05), so the value of β0 in the population is most likely close to zero. Furthermore, the p-value of β1 (<0.001) indicates that there is a low probability of observing this value by chance under the null.
 
 9. Based on the justification in #8, what practical implications does this result have? That is, are the statistical results that you have been describing/summarizing throughout this assignment practically relevant? Be as specific as you can in your discussion about why you believe the results are practically useful or not.
 
-We have found that, in the current status of the model, the y-intercept is not significant different from zero. Some kind of linear or statistical transformation should be explored in order to improve this situation. In the case of the slope, evidence about statistical significance was provided, which means that Early career pay affects the costs of Room and board.
+We have found that, in the current status of the model, the y-intercept is not significantly different from zero. Some kind of linear or statistical transformation could be explored to improve this situation. In the case of the slope, evidence has been provided on statistical significance , which means that Early career pay affects Room and board costs
 
-Now, in practical terms we could conclude that for one dollar increase in the early career pay, the room and board costs increase, on average, in .216. Of course, a more interpretable option would be decrease the metric of the predictor variable, for example, dividing the values by 1.000.
+Now, in practical terms we could conclude that for every dollar increase in Early career pay, room and board costs increase, on average, by .216. Of course, a more interpretable option would be to decrease the metric of the predictor variable, for example, by dividing the values by 1.000.
 
-The results are useful, especially if the correlation coefficient and estimated slope are considered. The early career pay increase the costs of room and board, and that is something that students should take into account when make their decisions about where studying.
+The results are useful, especially if the correlation coefficient and estimated slope are taken into account. Early career pay increases the costs of room and board, and that is something students should consider when making their decisions about where to study
