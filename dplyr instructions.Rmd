@@ -1,0 +1,210 @@
+---
+title: "dplyr"
+author: "Geraldo B. Padilla F."
+date: "10/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, eval=FALSE}
+install.packages("datos") #package that contains the data set
+library(datos)
+library(tidyverse)
+```
+
+5. Lo básico de dplyr
+
+En este capítulo, aprenderás las cinco funciones clave de dplyr que te permiten resolver la gran mayoría de tus desafíos de manipulación de datos:
+
+- Filtrar o elegir las observaciones por sus valores (**filter()** — del inglés filtrar).
+- Reordenar las filas (**arrange()** — del inglés organizar).
+- Seleccionar las variables por sus nombres (**select()** — del inglés seleccionar).
+- Crear nuevas variables con transformaciones de variables existentes (**mutate()** — del inglés mutar o transformar).
+- Contraer muchos valores en un solo resumen (**summarise()** — del inglés resumir).
+
+Todas estas funciones se pueden usar junto con **group_by()** (del inglés agrupar por), que cambia el alcance de cada función para que actúe ya no sobre todo el conjunto de datos sino de grupo en grupo. Estas seis funciones proporcionan los verbos para este lenguaje de manipulación de datos.
+
+Todos los verbos funcionan de manera similar:
+
+El primer argumento es un data frame. Los argumentos posteriores describen qué hacer con el data frame usando los nombres de las variables (sin comillas). El resultado es un nuevo data frame. En conjunto, estas propiedades hacen que sea fácil encadenar varios pasos simples para lograr un resultado complejo. Los resultados se muestran de inmediato.
+
+5.2 Filtrar filas con **filter()**
+
+**filter()** te permite filtrar un subconjunto de observaciones según sus valores. El primer argumento es el nombre del data frame. El segundo y los siguientes argumentos son las expresiones que lo filtran. Por ejemplo, podemos seleccionar todos los vuelos del 1 de enero con:
+
+```{r, eval=FALSE}
+filter(vuelos, mes == 1, dia == 1)
+```
+
+Cuando ejecutas esa línea de código, dplyr ejecuta la operación de filtrado y devuelve un nuevo data frame. Las funciones de dplyr nunca modifican su input, por lo que si deseas guardar el resultado, necesitarás usar el operador de asignación (<- o =)
+
+5.2.1 Comparaciones
+
+Para usar el filtrado de manera efectiva, debes saber cómo seleccionar las observaciones que deseas utilizando los operadores de comparación. R proporciona el conjunto estándar: >, >=, <, <=, != (no igual) y == (igual). Para variables continuas, en lugar de confiar en ==, usa near().
+
+5.2.2 Operadores lógicos
+
+Si tienes múltiples argumentos para filter() estos se combinan con “y”: cada expresión debe ser verdadera para que una fila se incluya en el output. Para otros tipos de combinaciones necesitarás usar operadores Booleanos: & es “y”, | es “o”, y ! es “no”.
+
+```{r, eval=FALSE}
+filter(vuelos, mes == 11 | mes == 12)
+```
+
+El orden de las operaciones no funciona como en español. No puedes escribir filter(vuelos, mes == (11 | 12)), que literalmente puede traducirse como “encuentra todos los vuelos que partieron en noviembre o diciembre”. En cambio, encontrará todos los meses que son iguales a 11 | 12, una expresión que resulta en ‘TRUE’ (verdadero). En un contexto numérico (como aquí), ‘TRUE’ se convierte en uno, por lo que encuentra todos los vuelos en enero, no en noviembre o diciembre. ¡Esto es bastante confuso!
+
+Una manera rápida y útil para resolver este problema es x %in% y (es decir, x en y). Esto seleccionará cada fila donde x es uno de los valores en y. Podríamos usarlo para reescribir el código de arriba:
+
+```{r, eval=FALSE}
+filter(vuelos, mes %in% c(11,12))
+```
+
+A veces puedes simplificar subconjuntos complicados al recordar la ley de De Morgan: !(x & y) es lo mismo que !x | !y, y !(x | y) es lo mismo que !x & !y. Por ejemplo, si deseas encontrar vuelos que no se retrasaron (en llegada o partida) en más de dos horas, puedes usar cualquiera de los dos filtros siguientes:
+
+```{r, eval=FALSE}
+filter(vuelos, !(atraso_llegada > 120 | atraso_salida > 120))
+filter(vuelos, atraso_llegada <= 120, atraso_salida <= 120)
+```
+
+5.2.3 Valores faltantes
+
+Una característica importante de R que puede hacer que la comparación sea difícil son los valores faltantes, o NAs (del inglés “no disponibles”). NA representa un valor desconocido, lo que hace que los valores perdidos sean “contagiosos”: casi cualquier operación que involucre un valor desconocido también será desconocida.
+
+Si deseas determinar si falta un valor, usa **is.na()**. filter() solo incluye filas donde la condición es TRUE; excluye tanto los valores FALSE como NA.
+
+5.3 Reordenar las filas con **arrange()**
+
+arrange() funciona de manera similar a filter() excepto que en lugar de seleccionar filas, cambia su orden. La función toma un data frame y un conjunto de nombres de columnas (o expresiones más complicadas) para ordenar según ellas. Si proporcionas más de un nombre de columna, cada columna adicional se utilizará para romper empates en los valores de las columnas anteriores:
+
+```{r}
+set.seed(123)
+x1 <- sample(1:2, 10, replace = TRUE)
+x2 <- sample(1:3, 10, replace = TRUE)
+x3 = sample(1:4, 10, replace = TRUE)
+dat1 = data.frame(cbind(x1, x2, x3))
+head(dat1)
+
+arrange(dat1, x1, x2, x3)
+```
+
+
+```{r}
+arrange(vuelos, anio, mes, dia)
+arrange(vuelos, desc(atraso_salida))
+```
+
+Los valores faltantes siempre se ordenan al final.
+
+5.4 Seleccionar columnas con **select()**
+
+No es raro obtener conjuntos de datos con cientos o incluso miles de variables. En este caso, el primer desafío a menudo se reduce a las variables que realmente te interesan. select() te permite seleccionar rápidamente un subconjunto útil utilizando operaciones basadas en los nombres de las variables.
+
+```{r}
+select(vuelos, anio, mes, dia)
+```
+
+Seleccionar todas las columnas entre anio y dia (incluyente):
+
+select(vuelos, anio:dia)
+
+Seleccionar todas las columnas excepto aquellas entre anio en dia (incluyente):
+
+select(vuelos, -(anio:dia))
+
+select() se puede usar para cambiar el nombre de las variables, pero rara vez es útil porque descarta todas las variables que no se mencionan explícitamente. En su lugar, utiliza **rename()**, que es una variante de select() que mantiene todas las variables que no se mencionan explícitamente:
+
+```{r}
+rename(vuelos, cola_num = codigo_cola)
+```
+
+Hay una serie de funciones auxiliares que puedes usar dentro de select():
+
+- starts_with("abc"): coincide con los nombres que comienzan con “abc”.
+
+- ends_with("xyz"): coincide con los nombres que terminan con “xyz”.
+
+- contains("ijk"): coincide con los nombres que contienen “ijk”.
+
+- matches("(.)\\1"): selecciona variables que coinciden con una expresión regular. Esta en particular coincide con cualquier variable que contenga caracteres repetidos. Aprenderás más sobre expresiones regulares en Cadenas de caracteres.
+
+- num_range("x", 1:3): coincide con x1,x2 y x3.
+
+5.5 Añadir nuevas variables con **mutate()**
+
+Además de seleccionar conjuntos de columnas existentes, a menudo es útil crear nuevas columnas en función de columnas existentes. Ese es el trabajo de mutate() (del inglés mutar o transformar).
+
+mutate() siempre agrega nuevas columnas al final de un conjunto de datos, así que comenzaremos creando un conjunto de datos más pequeño para que podamos ver las nuevas variables.
+
+```{r}
+vuelos_sml <- select(vuelos,
+  anio:dia,
+  starts_with("atraso"),
+  distancia,
+  tiempo_vuelo
+)
+```
+
+
+```{r}
+mutate(vuelos_sml,
+  ganancia = atraso_salida - atraso_llegada,
+  velocidad = distancia / tiempo_vuelo * 60
+)
+```
+
+Si solo quieres conservar las nuevas variables, usa **transmute()**.
+
+5.5.1 Funciones de creación útiles
+
+Hay muchas funciones para crear nuevas variables que puedes usar con mutate(). La propiedad clave es que la función debe ser vectorizada: debe tomar un vector de valores como input, y devolver un vector con el mismo número de valores como output. No hay forma de enumerar todas las posibles funciones que podrías usar, pero aquí hay una selección de funciones que frecuentemente son útiles:
+
+Operadores aritméticos: +, -,*,/,^. Todos están vectorizados usando las llamadas “reglas de reciclaje”. Si un parámetro es más corto que el otro, se extenderá automáticamente para tener la misma longitud. Esto es muy útil cuando uno de los argumentos es un solo número: tiempo_vuelo / 60, horas * 60 + minuto, etc.
+
+Los operadores aritméticos también son útiles junto con las funciones de agregar que aprenderás más adelante. Por ejemplo, x / sum(x) calcula la proporción de un total, y y - mean(y) calcula la diferencia de la media.
+
+Aritmética modular: %/% (división entera) y %% (resto), donde x == y * (x %/% y) + (x %% y). La aritmética modular es una herramienta útil porque te permite dividir enteros en partes. Por ejemplo, en el conjunto de datos de vuelos, puedes calcular hora yminutos de horario_salida con:
+
+```{r}
+transmute(vuelos,
+  horario_salida,
+  hora = horario_salida %/% 100,
+  minuto = horario_salida %% 100
+)
+```
+
+Logaritmos: log(), log2(), log10(). Los logaritmos son increíblemente útiles como transformación para trabajar con datos con múltiples órdenes de magnitud. También convierten las relaciones multiplicativas en aditivas, una característica que retomaremos en los capítulos sobre modelos.
+
+En igualdad de condiciones, recomendamos usar log2() porque es más fácil de interpretar: una diferencia de 1 en la escala de registro corresponde a la duplicación de la escala original y una diferencia de -1 corresponde a dividir a la mitad.
+
+Rezagos: lead() y lag() te permiten referirte a un valor adelante o un valor atrás (con rezago). Esto te permite calcular las diferencias móviles (por ejemplo, x - lag(x)) o encontrar cuándo cambian los valores (x! = lag (x)). Estos comandos son más útiles cuando se utilizan junto con group_by(), algo que aprenderás en breve.
+
+Agregados acumulativos y móviles: R proporciona funciones para ejecutar sumas, productos, mínimos y máximos: cumsum(), cumprod(), cummin(), cummax(); dplyr, por su parte, proporciona cummean() para las medias acumuladas. Si necesitas calcular agregados móviles (es decir, una suma calculada en una ventana móvil), prueba el paquete RcppRoll.
+
+Comparaciones lógicas: <, <=, >, >=, != sobre las cuales aprendiste antes. Si estás haciendo una secuencia compleja de operaciones lógicas, es a menudo una buena idea almacenar los valores provisionales en nuevas variables para que puedas comprobar que cada paso funciona como se espera.
+
+Ordenamiento: hay una serie de funciones de ordenamiento (ranking), pero deberías comenzar con min_rank(). Esta función realiza el tipo más común de ordenamiento (por ejemplo, primero, segundo, tercero, etc.). El valor predeterminado otorga la menor posición a los valores más pequeños; usa desc(x) para dar la menor posición a los valores más grandes.
+
+```{r}
+y <- c (1, 2, 2, NA, 3, 4)
+min_rank(y)
+#> [1]  1  2  2 NA  4  5
+min_rank(desc(y))
+#> [1]  5  3  3 NA  2  1
+```
+
+Si min_rank() no hace lo que necesitas, consulta las variantes row_number(), dense_rank(), percent_rank(), cume_dist(),quantile(). Revisa sus páginas de ayuda para más detalles.
+
+```{r}
+row_number(y)
+#> [1]  1  2  3 NA  4  5
+dense_rank(y)
+#> [1]  1  2  2 NA  3  4
+percent_rank(y)
+#> [1] 0.00 0.25 0.25   NA 0.75 1.00
+cume_dist(y)
+#> [1] 0.2 0.6 0.6  NA 0.8 1.0
+```
+

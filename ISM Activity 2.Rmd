@@ -25,7 +25,7 @@ This activity explores the relationship between variables in a data set referred
 urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/rideshare_small.csv'
 ride<-read.csv(url(urlfile))
 library("easypackages")
-paq <- c('e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
+paq <- c('e1071','lubridate', 'mosaic', 'ggformula', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse')
 libraries(paq)
 theme_set(theme_statthinking())
 ```
