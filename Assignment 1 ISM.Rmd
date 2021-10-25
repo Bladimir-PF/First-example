@@ -95,7 +95,8 @@ Figure 3 includes a straight line through the relationship between the two varia
 Figure 3:
 
 ```{r}
-gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5) %>% 
+gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5) %>%
+  gf_smooth(method = 'loess', linetype = 2, color = 'red') %>%
   gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
   gf_labs(x = 'Early career pay (in $)',
           y = "Costs of room and board (in $)")
@@ -150,6 +151,18 @@ gf_density(~ .std.resid, data = norm_residuals) %>%
 
 This assumption can also be explored by analyzing the coincidence of the standardized residuals and theoretical percentiles. The standardized residuals follow  the line closely, so normality can again be assumed.
 
+```{r}
+head(norm_residuals)
+arrange(norm_residuals, .resid)
+```
+
+```{r}
+tuition <- tuition %>%
+  mutate(ecr_min = early_career_pay - min(early_career_pay))
+tuition_lm_min <- lm(room_and_board ~ ecr_min, data = tuition)
+coefficients(tuition_lm_min)
+```
+
 Figure 5
 
 ```{r}
@@ -158,7 +171,7 @@ ggplot(norm_residuals, aes(sample = .std.resid)) +
   stat_qq_line(size = 2)
 ```
 
-If these evidences are not sufficient, the Shapiro-Wilk test can be analyzed. Running the test on theresiduals, the null hypothesis can be maintained at the .05 of significance level. In other words, the p-value (<0.001) of the Shapiro-Wilk test suggests that the residuals follow a normal distribution.
+If these evidences are not sufficient, the Shapiro-Wilk test can be analyzed. Running the test on the residuals, the null hypothesis can be maintained at the .05 of significance level. In other words, the p-value (<0.001) of the Shapiro-Wilk test suggests that the residuals follow a normal distribution.
 
 ```{r}
 shapiro.test(costs_lm$residuals)

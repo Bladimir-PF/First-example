@@ -1,7 +1,6 @@
 ---
 title: "ISM - Assignment 2"
 author: "Geraldo B. Padilla F."
-date: "24-10-2021"
 output: html_document
 ---
 
@@ -9,12 +8,66 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+urlfile<-'https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/salary_tuition.csv'
+tuition<-read.csv(url(urlfile))
+library("easypackages")
+paq <- c('e1071','lubridate', 'mosaic', 'ggformula', 'broom', 'paramtest', 'pwr', 'ggplot2', 'nlme', 'dplyr', 'knitr', 'dplyr', 'dbplyr', 'readxl', 'GGally', 'Hmisc', 'corrplot', 'PerformanceAnalytics', 'statthink', 'tidyverse', 'Lahman')
+libraries(paq)
+theme_set(theme_statthinking())
+```
+
 Questions
-Note: Each question is worth 1 pt unless otherwise specified.
 
 1. Based on your first assignment, are there attributes that could have been missing from the linear regression fitted in assignment 1? That is, is the assumption of all attributes being included in the model appropriate? Why or why not? If not, what other attributes may be of interest?
 
+First, let us recall the proposed analysis. The guiding question was whether the estimated Early Career Pay (in USD) explains some variation in Room and Board costs (in USD). The underlying reasoning was that more expensive careers tend to be offered in expensive universities and cities, so students enrolling in those programs should expect high Room and board costs.
+
+The relationship between the two variables and the linear regression model analyzed were as follow:
+
+Figure 1:
+
+```{r}
+gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5) %>%
+  gf_smooth(method = 'loess', linetype = 2, color = 'red') %>%
+  gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
+  gf_labs(x = 'Early Career Pay (in $)',
+          y = "Costs of Room and Board (in $)")
+```
+
+Table 1:
+
+```{r}
+cor(room_and_board ~ early_career_pay, data = tuition)
+rb_lm <- lm(room_and_board ~ early_career_pay, data = tuition)
+summary(rb_lm)
+coefficients(rb_lm)
+```
+
+Based on these results, it was stated that the relationship is roughly linear (r=.62), with departure of data at the lower and upper extremes (red line). From the summary of the simple linear regression, the costs of Room and Board (RB) is, on average, -129.75 (b0) when the Early Career Pay (ECP) equals zero. The slope (b1) is 0.216, and it can be interpreted as for a one-unit increase in ECP (in USD), the cost of RB increases, on average, by 
+
+Even though the correlation index is moderately high, there is obviously room for improving the model and adding other variables to help explain the variability of the dependent variable. It is difficult for a phenomenon to be explained by a single predictor, and in this case, one could add the variable Tuition for out-of-state residents (in USD), under the assumption that these students will have to spend more money than local students on RB because they will be away from their families and home.
+
+On the other hand, we can assume that according to the type of institution [Public = 0; Private = 1] the costs associated with room and board will also increase (although we could also find a correlation of this variable with ECP).
+
+```{r}
+tuition <- tuition %>%
+  mutate(type_dummy = ifelse(type == 'Private', 1, 0))
+```
+
 2. Add one or more of the attributes identified in question 1 to create a multiple regression model. That is, add one or more of the attributes from question 1 while keeping the attribute from assignment 1 into the regression model. Summarize the interpretation of the regression coefficient estimates for this multiple regression model.
+
+Based on the previous discussion, the multiple regression model is:
+
+```{r}
+rb_mlm <- lm(room_and_board ~ early_career_pay + type_dummy, data = tuition)
+summary(rb_mlm)
+coefficients(rb_mlm)
+```
+
+According to the model summary, the y-intercept (b0) is -219.5142880. Since the model includes a qualitative variable, the intercept is linked to the reference level of the indicator variable (type of institution = Public [0]). Thus, the intercept would be interpreted as follows: the average costs of Room and Board for students enrolled in Public institutions would be -219.51 when Early Career Pay equals zero. In practical terms, this intercept is hardly interpretable and perhaps a mean-centering transformation would be useful.
+
+The partial slope of Early Career Pay (b1) is 0.2039532, not much different from the value obtained previously, which means that for one unit change (in dollars) in costs of Early Career Pay, the costs of Room and Board increase, on average and holding the membership constant (Type of institution), by 0.20. Again, In this case, the slope is small due to the metric of this variable, whose values are expressed in 1.000 units.
 
 3. Estimate model fit indices to compare the model from assignment 1 to the multiple regression fitted in question 2. Does the model improve model fit based on that from assignment 1? Why or why not?
 
