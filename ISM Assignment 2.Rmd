@@ -1,0 +1,27 @@
+---
+title: "ISM - Assignment 2"
+author: "Geraldo B. Padilla F."
+date: "24-10-2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Questions
+Note: Each question is worth 1 pt unless otherwise specified.
+
+1. Based on your first assignment, are there attributes that could have been missing from the linear regression fitted in assignment 1? That is, is the assumption of all attributes being included in the model appropriate? Why or why not? If not, what other attributes may be of interest?
+
+2. Add one or more of the attributes identified in question 1 to create a multiple regression model. That is, add one or more of the attributes from question 1 while keeping the attribute from assignment 1 into the regression model. Summarize the interpretation of the regression coefficient estimates for this multiple regression model.
+
+3. Estimate model fit indices to compare the model from assignment 1 to the multiple regression fitted in question 2. Does the model improve model fit based on that from assignment 1? Why or why not?
+
+4. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. In addition, do the model assumptions seem better met compared to those from the regression in assignment 1? 2 pts
+
+5. Summarize the statistical evidence surrounding the null or alternative hypotheses that are being explored for the coefficients entered into the model. Note, I did not explicitly ask you for null/alternative hypotheses, but you may want to write those down for your reference. In a few sentences, describe if the evidence provides support for or against the null hypothesis. Provide specific statistical evidence to support your justification. 2 pts
+
+6. Create confidence intervals for the coefficients in the multiple regression model. Justify your confidence level and interpret the confidence intervals in the context of the data. What do these confidence intervals suggest about the magnitude of effect? 2 pts
+
+7. Based on the justification in #5 and #6, what practical implications does this result have? That is, are the statistical results that you have been describing/summarizing throughout this assignment practically relevant? Be as specific as you can in your discussion about why you believe the results are practically useful or not.
