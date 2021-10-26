@@ -1,7 +1,9 @@
 ---
 title: "ISM - Assignment 2"
 author: "Geraldo B. Padilla F."
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
