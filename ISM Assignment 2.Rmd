@@ -35,8 +35,6 @@ gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5
           y = "Costs of Room and Board (in $)")
 ```
 
-Table 1:
-
 ```{r}
 cor(room_and_board ~ early_career_pay, data = tuition)
 rb_lm <- lm(room_and_board ~ early_career_pay, data = tuition)
@@ -44,7 +42,7 @@ summary(rb_lm)
 coefficients(rb_lm)
 ```
 
-Based on these results, it was stated that the relationship is positive and roughly linear (r=.62), with departure of data at the lower and upper extremes (red line). From the summary of the simple linear regression, the costs of Room and Board (RB) is, on average, -129.75 (b0) when the Early Career Pay (ECP) equals zero. The slope (b1) is 0.216, and it can be interpreted as for a one-unit increase in ECP (in USD), the cost of RB increases, on average, by 
+Based on these results, the relationship is claimed to be positive and approximately linear (r=0.62), with data deviation at the lower and upper extremes (the red line becomes flat at these locations). From the summary of the simple linear regression,the costs of Room and Board (RB) are, on average, -129.75 (b0) when the Early Career Pay (ECP) is equal to zero. The slope (b1) is 0.216, and can be interpreted to mean that for a one unit increase in ECP (in USD), the cost of RB increases, on average, by 0.216 dollars.
 
 Even though the correlation index is moderately high, there is obviously room for improving the model and adding other variables to help explain the variability of the dependent variable. It is difficult for a phenomenon to be explained by a single predictor, and in this case, one could add the type of institution [Public = 0; Private = 1]. The guiding question now will be: do the estimated Early Career Pay (in USD) and the type of institution in which students are enrolled (Private or Public) explain the variation in room and board costs (in USD)?
 
@@ -65,35 +63,108 @@ summary(rb_mlm)
 coefficients(rb_mlm)
 ```
 
-According to the model summary, the y-intercept (b0) is -219.5142880. Since the model includes a qualitative variable, the intercept is linked to the reference level of the indicator variable (type of institution = Public [0]). Thus, the intercept would be interpreted as follows: the average costs of Room and Board for students enrolled in Public institutions would be -219.51 when Early Career Pay equals zero. In practical terms, this intercept is hardly interpretable and perhaps a minimum-centering transformation would be useful if we were interested in a more formal analysis.
+According to the model summary, the y-intercept (b0) is -219.514. Since the model includes a qualitative variable, the intercept is linked to the reference level of the indicator variable (type of institution = Public [0]). Thus, the intercept would be interpreted as follows: the average costs of Room and Board for students enrolled in Public institutions would be -219.51 when Early Career Pay equals zero. In practical terms, this intercept is hardly interpretable and perhaps a minimum-centering transformation would be useful if we were interested in a more formal analysis.
 
-The partial slope of Early Career Pay (b1) is 0.2039532, not much different from the value obtained previously (b0 = 0.2161361), which means that for one unit change (in dollars) in costs of Early Career Pay, the costs of Room and Board increase, on average and holding the membership constant (Type of institution), by 0.20 dollars. Again, In this case, the slope is small due to the metric of this variable, whose values are expressed in 1.000 dollar units. A more practical interpretation would be that the costs of RB increase, on average, by 203,95 dollars per 1.000 units (dollars) increase in ECP.
+The partial slope of Early Career Pay (b1) is 0.204, not very different from the value obtained previously (b0 = 0.216), which means that for one unit change (in dollars) in the costs of Early Career Pay,  Room and Board costs increase, on average and holding the membership constant (Type of institution), by 0.20 dollars. Again, In this case, the slope is small due to the metric of this variable, whose values are expressed in units of 1.000 dollar. A more practical interpretation would be that the costs of RB increase, on average, by 203,95 dollars per 1.000 units (dollars) increase in ECP.
 
-The partial slope of Type of institution (b2) corresponds to Private institutions category, and its interpretation will be as follow: the costs of RB increase, on average, by 1.010,98 (b0+b1) when students enrolled in Private institutions. The raw b2 (1230.49) reports the difference in average RB costs between Public and Private institutions.
+The partial slope of Type of institution (b2) corresponds to the category of Private institutions, and its interpretation would be as follow: the costs of RB increase, on average, by 1.010,98 (b0+b1) dollars when students enroll in Private institutions. The raw value b2 (1230.49) indicates the difference in average RB costs between students enrolled in Public and Private institutions.
 
 3. Estimate model fit indices to compare the model from assignment 1 to the multiple regression fitted in question 2. Does the model improve model fit based on that from assignment 1? Why or why not?
 
-R-squared and RSE are common indicators of fitting of the model to data. In this case, we have the following changes between the first and second model:
+The r-squared and Residual Standard Error (RSE) are common indicators of model fit to the data. In this case, we have the following changes between the first and second models:
 
 ```{r}
 summary(rb_lm)$r.square; summary(rb_lm)$sigma
 summary(rb_mlm)$r.square; summary(rb_mlm)$sigma
 ```
 
-The r-squared and RSE improved. The predictors included in the multiple regression model (Early Career Pay and Type of institution) explains around 43,6% of the variability of RB costs, a slight increase compared to the previous one (38,9%). On the other hand, the sigma decreased from 2160.76 to 2077.07; this means that the difference between the observed RB costs and predicted ones is, on average, 2077.07.
+The r-squared and RSE improved. The predictors included in the multiple regression model (Early Career Pay and Type of institution) explain around 43,6% of the variability of RB costs, a slight increase compared to the previous result (38,9%). On the other hand, the sigma has decreased from 2160.76 to 2077.07, which means that the difference between the observed RB costs and the predicted ones is, on average, 2077.07 dollars.
 
-In addition, due to the models are nested, we can analyze the variance decomposition to support or challenge the our results. The objective is provide more evidence that the added predictor (Type of institution) helps to explain variation over and above the first model (simple one).
+Furthermore, since the models are nested, we can analyze the variance decomposition to support or question our results. The objective is to provide further evidence that the added predictor (Type of institution) helps to explain the variance over and above the first (simple) model.
 
 ```{r}
 anova(rb_lm, rb_mlm)
 ```
 
-The large F-statistics (61.425) suggests that the Type of institution is related to RB costs.
+The large F-statistics (61.425) suggests that the Type of institution is related to RB costs and is a useful predictor.
 
 4. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. In addition, do the model assumptions seem better met compared to those from the regression in assignment 1? 2 pts
 
+First, let us explore the assumption of normality. Based on the Q-Q plot, we could roughly assume that the residuals are normally distributed. A high proportion of the values align with the straight line within 2 standard deviations, but some problems appear at the extremes, especially if the deviation of the values at the bottom of the distribution is considered.
+
+figure 2
+
+```{r}
+tuition$resid <- resid(rb_mlm)
+ggplot(tuition, aes(sample = resid)) + 
+  stat_qq(size = 2) + 
+  stat_qq_line(size = 1) +
+  labs(x = 'Theoretical Quantiles', y = 'Residuals')
+```
+The result of the Shapiro-wilk normality test is stricter: the assumption of normal distribution is not satisfied (p-value < 0.001).
+
+```{r}
+shapiro.test(rb_mlm$residuals)
+```
+
+However, due to the sample size (n=2,500) and the principles of the CLT theorem, we can assume that violation of this assumption will not affect the model too much.
+
+Second, the assumption of homogeneity of variance look worst. There are several residuals falling out of the 2 standard deviations, a sign that some values could be affecting the estimation due to their large  differences. Moreover, there is a decreasing pattern on the right side of the plot, which is also evidence that some residuals are correlated with the predictors.
+
+Figure 3. Scale-Location
+
+```{r}
+norm_residuals <- augment(rb_mlm)
+gf_point(.std.resid ~ .fitted, data = norm_residuals, size = 3, alpha = .15) %>%
+  gf_hline(yintercept = ~ 2, color = 'red', size = .5) %>%
+  gf_hline(yintercept = ~ -2, color = 'red', size = .5) %>%
+  gf_smooth(method = 'loess', size = 1) %>%
+  gf_labs(x = 'Fitted Values',
+          y = 'Standardized Residuals')
+```
+
+Third, looking at the Cook's distance plot, there are some influential values in the model that could be affecting the regression estimate, especially those related to Early Career Pay. Despite this evidence, it is difficult to decide whether or not to remove values from the data. For instance, using the rule of thumb for greater than 1 Cook's distance, none of the values should be removed. However, if some of the values are too extreme or do not make sense compared to the rest of the values, they could be eliminated and the model should be performed again evaluating the improvement of the model.
+
+```{r}
+plot(rb_mlm, 4)
+```
+
+Compared to the previous model, the assumptions do not improve as much as expected. Although the fit indices (r-squared and RSE) have improved, the assumptions look really similar. Contrary to expectation, the conclusion is almost the same: the residuals are approximately normally distributed: homogeneity of variance cannot be assumed and needs to be further explored; finally, there are some leverage points, but any Cook's distance is larger than 1, thus values should not be removed from the data set.
+
 5. Summarize the statistical evidence surrounding the null or alternative hypotheses that are being explored for the coefficients entered into the model. Note, I did not explicitly ask you for null/alternative hypotheses, but you may want to write those down for your reference. In a few sentences, describe if the evidence provides support for or against the null hypothesis. Provide specific statistical evidence to support your justification. 2 pts
+
+To analyze whether or not the null hypotheses can be rejected (each slope and the y-intercept equal zero in the population; there is no relationship between the predictors and the outcome), there are two useful indicators: p-values and confidence intervals.
+
+According to the summary of the multiple linear regression, the p-value of the y-intercept is larger (0.659) than accepted at the 0.05 significance level, so most likely the value of β0 in the population is close to zero. On the other hand, the p-values of β1 (<0.001) and β2 (<0.001) indicate that there is a very low probability of observing these values in the population by chance, thus we can conclude, in this example, that they are higher than 0 (under the null hypothesis and using a sampling distribution).
+
+```{r}
+summary(rb_mlm)
+```
+
+This interpretation of the model results is supported by the 95% confidence interval limits. Only the intercept interval includes zero, so we cannot reject the null hypothesis for this estimated parameter (β0 = 0).
+
+```{r}
+(CI_b0 <- -219.5142880 + c(-1, 1) * 1.96 * 497.2)
+(CI_b1 <- 0.2039532 + c(-1, 1) * 1.96 * 0.009726)
+(CI_b2 <- 1230.4944616 + c(-1, 1) * 1.96 * 157.0)
+```
 
 6. Create confidence intervals for the coefficients in the multiple regression model. Justify your confidence level and interpret the confidence intervals in the context of the data. What do these confidence intervals suggest about the magnitude of effect? 2 pts
 
+The intervals were constructed in the previous question on the basis of 95% confidence. Considering the complexity of estimating social phenomena, I consider this level of confidence to be an acceptable middle ground between scientific rigor and practical flexibility.
+
+Although not significant, the y-intercept interval can be interpreted to mean that, with 95% confidence, the average cost of Room and Board for students enrolled in Public institutions is between -$1194.0263 and $754.9977 when Early Career Pay equals zero.
+
+For the case of partial slope b1, with 95% confidence, the unknown value of the parameter lies between 0.184848902 and 0.2230162, that is, for each unit by which Early Career Pay increases, Room and Board costs increase, on average, between 0.18 and 0.22 dollars (holding the memberships constant).
+
+On the other hand, if we were to take 100 repeated samples and construct confidence intervals for each one, 95% of these new intervals for b2 would show that the true value of the slope lies between 922.7745 and 1538.2145. In other words, when students enroll in Private institutions (1), the average difference in Room and Board costs with students in Public institutions increases between $922.8 and $1538.2 (for a given value of ECP).
+
+Based on the confidence intervals, we can estimate that the results are not as positive as expected. The effect of the predictors on the dependent variable raises the need to revise the model, the relationship between the variables and to look for other analysis options using other variables in the data set.
+
 7. Based on the justification in #5 and #6, what practical implications does this result have? That is, are the statistical results that you have been describing/summarizing throughout this assignment practically relevant? Be as specific as you can in your discussion about why you believe the results are practically useful or not.
+
+After analyzing the multiple regression model using Early Career Pay costs and Type of institution to explain the variability of Room and Board costs among students, I think that there is not much practical utility in the results.
+
+On the positive side, both predictors were significant and are factors that increase the costs of RB. If students choose a career with higher costs during the first year they can expect to spend more money on room and board. On the other hand, those who enroll in private institutions can expect to spend more on room and board compared to public institutions, in addition to the costs of the program they study.
+
+These statistical results represent a step towards understanding the phenomenon but are not satisfactory, especially when we consider the results of the principles of normal distribution and homogeneity. A good option to improve the model is to explore the influential and outliers and evaluate whether removing them improves the estimation.
