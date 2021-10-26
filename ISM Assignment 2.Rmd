@@ -44,11 +44,11 @@ summary(rb_lm)
 coefficients(rb_lm)
 ```
 
-Based on these results, it was stated that the relationship is roughly linear (r=.62), with departure of data at the lower and upper extremes (red line). From the summary of the simple linear regression, the costs of Room and Board (RB) is, on average, -129.75 (b0) when the Early Career Pay (ECP) equals zero. The slope (b1) is 0.216, and it can be interpreted as for a one-unit increase in ECP (in USD), the cost of RB increases, on average, by 
+Based on these results, it was stated that the relationship is positive and roughly linear (r=.62), with departure of data at the lower and upper extremes (red line). From the summary of the simple linear regression, the costs of Room and Board (RB) is, on average, -129.75 (b0) when the Early Career Pay (ECP) equals zero. The slope (b1) is 0.216, and it can be interpreted as for a one-unit increase in ECP (in USD), the cost of RB increases, on average, by 
 
-Even though the correlation index is moderately high, there is obviously room for improving the model and adding other variables to help explain the variability of the dependent variable. It is difficult for a phenomenon to be explained by a single predictor, and in this case, one could add the variable Tuition for out-of-state residents (in USD), under the assumption that these students will have to spend more money than local students on RB because they will be away from their families and home.
+Even though the correlation index is moderately high, there is obviously room for improving the model and adding other variables to help explain the variability of the dependent variable. It is difficult for a phenomenon to be explained by a single predictor, and in this case, one could add the type of institution [Public = 0; Private = 1]. The guiding question now will be: do the estimated Early Career Pay (in USD) and the type of institution in which students are enrolled (Private or Public) explain the variation in room and board costs (in USD)?
 
-On the other hand, we can assume that according to the type of institution [Public = 0; Private = 1] the costs associated with room and board will also increase (although we could also find a correlation of this variable with ECP).
+This variable is added under the assumption that the type of institution, especially Private ones, tends to increase the overall costs of Room and Board for students.
 
 ```{r}
 tuition <- tuition %>%
@@ -65,11 +65,30 @@ summary(rb_mlm)
 coefficients(rb_mlm)
 ```
 
-According to the model summary, the y-intercept (b0) is -219.5142880. Since the model includes a qualitative variable, the intercept is linked to the reference level of the indicator variable (type of institution = Public [0]). Thus, the intercept would be interpreted as follows: the average costs of Room and Board for students enrolled in Public institutions would be -219.51 when Early Career Pay equals zero. In practical terms, this intercept is hardly interpretable and perhaps a mean-centering transformation would be useful.
+According to the model summary, the y-intercept (b0) is -219.5142880. Since the model includes a qualitative variable, the intercept is linked to the reference level of the indicator variable (type of institution = Public [0]). Thus, the intercept would be interpreted as follows: the average costs of Room and Board for students enrolled in Public institutions would be -219.51 when Early Career Pay equals zero. In practical terms, this intercept is hardly interpretable and perhaps a minimum-centering transformation would be useful if we were interested in a more formal analysis.
 
-The partial slope of Early Career Pay (b1) is 0.2039532, not much different from the value obtained previously, which means that for one unit change (in dollars) in costs of Early Career Pay, the costs of Room and Board increase, on average and holding the membership constant (Type of institution), by 0.20. Again, In this case, the slope is small due to the metric of this variable, whose values are expressed in 1.000 units.
+The partial slope of Early Career Pay (b1) is 0.2039532, not much different from the value obtained previously (b0 = 0.2161361), which means that for one unit change (in dollars) in costs of Early Career Pay, the costs of Room and Board increase, on average and holding the membership constant (Type of institution), by 0.20 dollars. Again, In this case, the slope is small due to the metric of this variable, whose values are expressed in 1.000 dollar units. A more practical interpretation would be that the costs of RB increase, on average, by 203,95 dollars per 1.000 units (dollars) increase in ECP.
+
+The partial slope of Type of institution (b2) corresponds to Private institutions category, and its interpretation will be as follow: the costs of RB increase, on average, by 1.010,98 (b0+b1) when students enrolled in Private institutions. The raw b2 (1230.49) reports the difference in average RB costs between Public and Private institutions.
 
 3. Estimate model fit indices to compare the model from assignment 1 to the multiple regression fitted in question 2. Does the model improve model fit based on that from assignment 1? Why or why not?
+
+R-squared and RSE are common indicators of fitting of the model to data. In this case, we have the following changes between the first and second model:
+
+```{r}
+summary(rb_lm)$r.square; summary(rb_lm)$sigma
+summary(rb_mlm)$r.square; summary(rb_mlm)$sigma
+```
+
+The r-squared and RSE improved. The predictors included in the multiple regression model (Early Career Pay and Type of institution) explains around 43,6% of the variability of RB costs, a slight increase compared to the previous one (38,9%). On the other hand, the sigma decreased from 2160.76 to 2077.07; this means that the difference between the observed RB costs and predicted ones is, on average, 2077.07.
+
+In addition, due to the models are nested, we can analyze the variance decomposition to support or challenge the our results. The objective is provide more evidence that the added predictor (Type of institution) helps to explain variation over and above the first model (simple one).
+
+```{r}
+anova(rb_lm, rb_mlm)
+```
+
+The large F-statistics (61.425) suggests that the Type of institution is related to RB costs.
 
 4. Explore and evaluate the model assumptions regarding the residual/error term. Summarize how well the model is meeting the assumptions, citing specific statistics or visualizations to justify your conclusions. In addition, do the model assumptions seem better met compared to those from the regression in assignment 1? 2 pts
 
