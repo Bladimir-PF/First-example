@@ -109,6 +109,7 @@ From the results of the simple linear regression performed, the costs of Room an
 ```{r}
 costs_lm <- lm(room_and_board ~ early_career_pay, data = tuition)
 coef(costs_lm)
+summary(costs_lm)
 ```
 
 $$
@@ -144,7 +145,7 @@ Based on the density plot (Figure 4), the residuals appear to have a fairly norm
 Figure 4
 
 ```{r}
-norm_residuals <- augment(costs_lm)
+norm_residuals1 <- augment(costs_lm)
 gf_density(~ .std.resid, data = norm_residuals) %>%
   gf_labs(x = "Standardized Residuals")
 ```
@@ -152,8 +153,8 @@ gf_density(~ .std.resid, data = norm_residuals) %>%
 This assumption can also be explored by analyzing the coincidence of the standardized residuals and theoretical percentiles. The standardized residuals follow  the line closely, so normality can again be assumed.
 
 ```{r}
-head(norm_residuals)
-arrange(norm_residuals, .resid)
+head(norm_residuals1)
+arrange(norm_residuals1, .resid)
 ```
 
 ```{r}
@@ -166,9 +167,9 @@ coefficients(tuition_lm_min)
 Figure 5
 
 ```{r}
-ggplot(norm_residuals, aes(sample = .std.resid)) + 
-  stat_qq(size = 5) + 
-  stat_qq_line(size = 2)
+ggplot(norm_residuals1, aes(sample = .std.resid)) + 
+  stat_qq(size = 2) + 
+  stat_qq_line(size = .5)
 ```
 
 If these evidences are not sufficient, the Shapiro-Wilk test can be analyzed. Running the test on the residuals, the null hypothesis can be maintained at the .05 of significance level. In other words, the p-value (<0.001) of the Shapiro-Wilk test suggests that the residuals follow a normal distribution.
@@ -182,10 +183,10 @@ Second, the homogeneity of the variance. When the regression line is laid horizo
 Figure 6
 
 ```{r}
-gf_point(.std.resid ~ .fitted, data = norm_residuals, size = 4, alpha = .4) %>%
+gf_point(.std.resid ~ .fitted, data = norm_residuals1, size = 4, alpha = .4) %>%
   gf_hline(yintercept = ~ 2, color = 'red', size = 1) %>%
   gf_hline(yintercept = ~ -2, color = 'red', size = 1) %>%
-  gf_smooth(method = 'lm', size = 1.2) %>%
+  gf_smooth(method = 'loess', size = 1.2) %>%
   gf_labs(x = 'Fitted Values',
           y = 'Standardized Residuals')
 ```
@@ -251,7 +252,6 @@ se_b1 <- sqrt(summary(costs_lm)$sigma^2 / sum_x[['sum_dev_x_sq']])
 (CI_b0 <- -129.7551288 + c(-1, 1) * 1.96 * 517.0658)
 (CI_b1 <- 0.2161361 + c(-1, 1) * 1.96 * 0.009988239)
 ```
-
 The C.I. of the y-intercept, constructed with 95% confidence, is 1143.2041 - 883.6938, which means that Roam and board costs  will fall, on average, between -1143.20 and 883.69 when Early career pay equals zero. On the other hand, with 95% confidence, a one unit increase in Early career pay (one dollar increase) increases Roam and board costs, on average, from 0.20 to 0.24. Moreover, since the first C.I. (95%) does contain zero, the β0 is not significantly different from 0. Conversely, as the second C.I. (95%) does not contain zero, We can conclude that the slope β1 is significantly different from zero at the .05 level.
 
 ```{r}

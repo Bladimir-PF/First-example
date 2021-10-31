@@ -1,6 +1,6 @@
 ---
 title: "ISM Activity 3"
-author: "Geraldo B. Padilla F."
+author: "ss"
 date: "10/13/2021"
 output: html_document
 ---
@@ -43,6 +43,7 @@ The intercept is 10.44 and the slope is 2.89. The estimated price values will be
 $$
 \hat{price} = 10.439 + 2.889 \ distance
 $$
+
 Moreover, the variability of prices accounted for distance is $R^2$ = 12.44%, and the dispersion of the observed values of price respect with the predicted values by the model is, on average, $8.77.
 
 Graphically, the relationship between price and distance look like:
@@ -51,7 +52,7 @@ Graphically, the relationship between price and distance look like:
 gf_point(price ~ distance, data = ride, size = 4, alpha = .2) %>%
   gf_labs(x = "Distance of the ride",
           y = "Price of the ride") %>%
-  gf_smooth() %>%
+  gf_smooth(method = 'loess') %>%
   gf_smooth(method = 'lm', color = 'lightblue', linetype = 2)
 ```
 
@@ -61,12 +62,16 @@ gf_point(price ~ distance, data = ride, size = 4, alpha = .2) %>%
 ride$residuals <- resid(ride_lm)
 ```
 
-Descriptive analysis of residuals (raw)
+Visualization of residuals (uncentered raw residuals):
+
+Figure 1: Density plot
 
 ```{r}
 gf_density(~ residuals, data = ride) %>%
   gf_labs(x = "Residuals")
 ```
+
+Figure 2: QQ plot
 
 ```{r}
 ggplot(ride, aes(sample = residuals)) + 
@@ -74,41 +79,32 @@ ggplot(ride, aes(sample = residuals)) +
   stat_qq_line(size = 2)
 ```
 
-```{r}
-df_stats(~residuals, data = ride, mean)
-```
-
 3.Evaluate the residuals for the assumption of normality of the residuals. How may the results be impacted by any deviation of normality?
+
+Based on the figures, we cannot assume that the normality assumptions is meet,however, due to the sample size (n=2,500) and CLT theorem we can rely on the estimates from the model. For this reasons, the results will not be impacted by violating this assumption.
 
 4. Evaluate the residuals for the assumption of homogeneity of variance. How may the results be impacted by any deviation of homogeneity of variance?
 
-```{r}
-norm_residuals <- augment(ride_lm)
-gf_density(~ .std.resid, data = norm_residuals) %>%
-  gf_labs(x = "Standardized Residuals")
-```
+Figure 3. Scale-Location
 
 ```{r}
 gf_point(.std.resid ~ .fitted, data = norm_residuals, size = 4, alpha = .15) %>%
   gf_hline(yintercept = ~ 2, color = 'red', size = 1) %>%
   gf_hline(yintercept = ~ -2, color = 'red', size = 1) %>%
-  gf_smooth(method = 'lm', size = 1.2) %>%
+  gf_smooth(method = 'loess', size = 2) %>%
   gf_labs(x = 'Fitted Values',
           y = 'Standardized Residuals')
 ```
 
-```{r}
-gf_point(.resid ~ .fitted, data = norm_residuals, size = 4, alpha = .15) %>%
-  gf_smooth(method = 'loess', size = 2) %>%
-  gf_labs(x = 'Fitted Values',
-          y = 'Residuals')
-```
+Based on figure 3, most of the standardized residuals (approximately 95%) fall within -/+ 2 standard deviations. Moreover, the residuals are nearly equally distributed around the loess line. If we could not meet this assumption, thus the estimation of the S.E. will be biased and the inferences will not be accurate.
 
 5. Are there any noticeable trends in the residuals? What implications could this have for the analysis? If a trend in the residuals exists, what may be a cause for this trend?
 
-6. Explore the model to identify if there are any points that have high leverage or could be identified as extreme values. It may be worth exploring studentized residuals, cook’s distance, and/or leverage values.
+Based on Figure 3, there is no noticeable trend in the standardized residuals. If a trend appears, so we would be violating the assumption that error term is uncorrelated with predictor values. On top of that, it would be a signal that we are missing some predictor variable in the model.
 
-Cook's distance
+6. Explore the model to identify if there are any points that have high leverage or could be identified as extreme values. It may be worth exploring studentized residuals, cook’s distance, and/or leverage values. 
+
+Figure 4: Cook's distance
 
 ```{r}
 norm_residuals %>%
@@ -118,12 +114,12 @@ norm_residuals %>%
           y = "Cook's Distance")
 ```
 
-Studentized residuals
-
-```{r}
+```{r, echo=FALSE, results='hide'}
 ride$student_residuals <- rstudent(ride_lm)
 head(ride)
 ```
+
+Figure 5. Studentized residuals
 
 ```{r}
 ride %>%
@@ -134,6 +130,8 @@ ride %>%
           y = "Studentized Residuals")
 ```
 
+Figure 6. Leverage
+
 ```{r}
 norm_residuals %>%
   mutate(obs_num = 1:n()) %>%
@@ -142,10 +140,4 @@ norm_residuals %>%
           y = "Hat Values (leverage)")
 ```
 
-```{r}
-plot(ride_lm, which = 1:5)
-```
-
-
-
-
+Based on Figures 4, 5 and 6, there are some potential outliers in the predictor variable. Some values of Distance (predictor) should be explored and evaluated in order to decide whether or not they would be removed from the data set to improve the estimates.
