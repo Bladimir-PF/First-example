@@ -1,0 +1,39 @@
+---
+title: "DOE compiled"
+author: "Geraldo B. Padilla F."
+date: "10/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Libraries needed
+
+```{r}
+library('paramtest')
+library('pwr')
+library('ggplot2')
+library('nlme')
+library('dplyr')
+library('randomizr')
+library('knitr')
+library("multcomp")
+library('lsmeans')
+library('emmeans')
+library("car")
+library("gmodels")
+library("powerMediation")
+library("HH")
+library("effects")
+library('agricolae')
+library('daewr')
+library('ibd')
+library('SuppDists')
+library('outliers')
+library('phia')
+library('stats')
+library('crossdes')
+```
+

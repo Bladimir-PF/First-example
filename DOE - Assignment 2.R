@@ -2,69 +2,39 @@ library("easypackages")
 paq <- c('paramtest','pwr', 'ggplot2', 'nlme', 'dplyr', 'randomizr', 'knitr', 'multcomp', 'lsmeans', 'emmeans', 'car', 'gmodels', 'powerMediation', 'HH', 'effects', 'agricolae', 'daewr', 'SuppDists', 'outliers', 'phia', 'stats', 'crossdes')
 libraries(paq)
 
-
-#4. Two sources of variation
-
-#First load data
-
-dat <- read.table(header=TRUE, text='
- subject gender   age before after
-       1   F   old    9.5   7.1
-       2   M   old   10.3  11.0
-       3   M   old    7.5   5.8
-       4   F   old   12.4   8.8
-       5   M   old   10.2   8.6
-       6   M   old   11.0   8.0
-       7   M young    9.1   3.0
-       8   F young    7.9   5.2
-       9   F   old    6.6   3.4
-      10   M young    7.7   4.0
-      11   M young    9.4   5.3
-      12   M   old   11.6  11.3
-      13   M young    9.9   4.6
-      14   F middle    8.6   6.4
-      15   F young   14.3  13.5
-      16   F   old    9.2   4.7
-      17   M young    9.8   5.1
-      18   F   old    9.9   7.3
-      19   F young   13.0   9.5
-      20   M young   10.2   5.4
-      21   M young    9.0   3.7
-      22   F middle    7.9   6.2
-      23   M   old   10.1  10.0
-      24   M middle    9.0   1.7
-      25   M middle    8.6   2.9
-      26   M middle    9.4   3.2
-      27   M middle    9.7   4.7
-      28   M middle    9.3   4.9
-      29   F middle   10.7   9.8
-      30   M   old    9.3   9.4 ')
+#4. Two-sources of variation (ts)
 
 #Check data structure
-
 head(dat)
 
 #Descriptive
-
 dat %>%
   group_by(gender, age) %>%
   summarise(N = n(), Mean = mean(after, na.rm=TRUE),  SD = sd(after, na.rm=TRUE))
 
-#Model with interaction
+#Models with and without interaction
 
-m1 <- lm(after ~ as.factor(gender) + as.factor(age) + as.factor(gender):as.factor(age), data = dat)
+ts_fit1a <- aov(after ~ gender + age + gender:age, data = dat)
+ts_fit1b <- aov(after ~ age + gender  + age:gender, data = dat)
+summary(fit1a)
+summary(fit1b)
+
+ts_lm1 <- lm(after ~ as.factor(gender) + as.factor(age), data = dat)
+ts_lm2 <- lm(after ~ as.factor(gender) + as.factor(age) + as.factor(gender):as.factor(age), data = dat)
 summary(m1)
 
-#Pairs averaged over age
+(fit2a <- Anova(lm(after ~ gender + age 
+                   + gender:age, data = dat), type = "II"))
+(fit2b <- Anova(lm(after ~ age + gender 
+                   + age:gender, data = dat), type = "II"))
 
+#Pairs averaged over age
 (pigs_m1_a <- pairs(emmeans(m1, "age")))
 
 #Pairs averaged over gender
-
 (pigs_m1_g <- pairs(emmeans(m1, "gender")))
 
 plot(pigs_m1_a, comparisons = TRUE)
-
 
 #Check comparisons 
 
@@ -187,8 +157,8 @@ my_data
 
 # linear combination of means and output via t-test
 t.test(apply(my_data[, c(1,3)],2,mean)-apply(my_data[, c(2,4)],2,mean))[[5]]/2
-
-t.test(apply(my_data[, c(1,4)],2,mean)-apply(my_data[, c(2,3)],2,mean))[[5]]/2
+apply(my_data[, c(1,3)],2,mean)
+apply(my_data[, c(1,2,3,4)],2,mean)
 
 # another alternative setting linear combinations
 # this is what we do by contrasts
@@ -220,6 +190,7 @@ solve(t(X)%*%X) # and this one?
 
 # how about this way?
 contrasts(treat)  # first group is droped
+
 # now defined our own 
 levels(treat) # check the order of factor levels
 c1 <- c(0,0,0,0)
@@ -227,10 +198,9 @@ c2 <- c(1,-1, 1,-1)
 c3 <- c(0,0,0,0)
 mat <- cbind(c1,c2,c3)
 contrasts(treat) <- mat
-fit2 <- lm(y ~ treat )
+fit2 <- lm(y ~ treat)
 coef(fit2)
 mean(y)
-
 
 # Here we just change the reference group
 # assume that three is what we want as a reference group now
@@ -295,9 +265,12 @@ coef(pigs_m1_a)
 coef(const_poly )
 
 # another example with another package
-m1_dun <-  multcomp::glht(m1, linfct = mcp (age ="Dunnett"),
+dat$age2 <- as.factor(dat$age)
+m2 <- lm(after ~ gender + age2 + gender:age2, data = dat)
+m2_dun <-  multcomp::glht(m2, linfct = mcp (age2 ="Dunnett"),
                           alternative = "greater")
-summary(m1_dun)
+
+summary(m2_dun)
 
 
 # Exercise 6
