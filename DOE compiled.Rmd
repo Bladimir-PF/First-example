@@ -1,5 +1,5 @@
 ---
-title: "DOE compiled"
+title: "DOE overview"
 author: "Geraldo B. Padilla F."
 date: "10/27/2021"
 output: html_document
@@ -11,29 +11,2818 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Libraries needed
 
-```{r}
-library('paramtest')
-library('pwr')
-library('ggplot2')
-library('nlme')
-library('dplyr')
-library('randomizr')
-library('knitr')
-library("multcomp")
-library('lsmeans')
-library('emmeans')
-library("car")
-library("gmodels")
-library("powerMediation")
-library("HH")
-library("effects")
-library('agricolae')
-library('daewr')
-library('ibd')
-library('SuppDists')
-library('outliers')
-library('phia')
-library('stats')
-library('crossdes')
+```{r, warning=FALSE, echo=FALSE, eval=FALSE}
+library("easypackages")
+paq <- c('paramtest','pwr', 'ggplot2', 'nlme', 'dplyr', 'randomizr', 'knitr', 'multcomp', 'lsmeans', 'emmeans', 'car', 'gmodels', 'powerMediation', 'HH', 'effects', 'agricolae', 'daewr', 'SuppDists', 'outliers', 'phia', 'stats', 'crossdes')
+libraries(paq)
 ```
+
+1. varying N (total sample size) and Cohen's d
+
+1) One source of variation > Random allocation helps to control variability in the outcomes
+
+```{r}
+power_one_source(Nmin = 50, # min sample size 
+                 Nmax = 200, # max sample size
+                 Nincrement = 50,  # increment in sample size
+                 dmin = .2,  # min efefct size
+                 dmax = .5,  # max effect size
+                 dincrement = .1, # increment in effect size
+                 n.iter = 1000) # number of iterations 
+```
+
+# 2) keep the effect size as it is and reduce the sample size
+
+```{r}
+power_one_source(Nmin = 25, # min sample size 
+                 Nmax = 150, # max sample size
+                 Nincrement = 25,  # increment in sample size
+                 dmin = .2,  # min efefct size
+                 dmax = .5,  # max effect size
+                 dincrement = .1, # increment in effect size
+                 n.iter = 1000) # number of iterations
+```
+
+# 3) keep the effect size as it is and increase the sample size
+
+```{r}
+power_one_source(Nmin = 100, # min sample size 
+                 Nmax = 1800, # max sample size
+                 Nincrement = 100,  # increment in sample size
+                 dmin = .2,  # min efefct size
+                 dmax = .5,  # max effect size
+                 dincrement = .1, # increment in effect size
+                 n.iter = 1000) # number of iterations
+```
+
+# 4) repeat the  2) and 4) but now fix the sample size to its orginal values and manipulate the effect size
+
+```{r}
+power_one_source(Nmin = 50, # min sample size 
+                 Nmax = 200, # max sample size
+                 Nincrement = 25,  # increment in sample size
+                 dmin = .1,  # min efefct size
+                 dmax = .3,  # max effect size
+                 dincrement = .1, # increment in effect size
+                 n.iter = 1000) # number of iterations
+```
+
+
+```{r}
+power_one_source(Nmin = 50, # min sample size 
+                 Nmax = 200, # max sample size
+                 Nincrement = 25,  # increment in sample size
+                 dmin = .4,  # min efefct size
+                 dmax = .7,  # max effect size
+                 dincrement = .1, # increment in effect size
+                 n.iter = 1000) # number of iterations
+```
+
+2. Creating a data set
+
+```{r}
+data(HairEyeColor)
+HairEyeColor <- data.frame(HairEyeColor)
+```
+
+Transform so each row is a subject. Columns describe subject's hair color, eye color, and gender
+
+```{r}
+hec <- HairEyeColor[rep(1:nrow(HairEyeColor),
+                        times = HairEyeColor$Freq), 1:3]
+```
+
+Lets see the few first and last units on the data set  
+
+```{r}
+head(hec)
+tail(hec)
+```
+Total sample size 
+
+```{r}
+N <- nrow(hec)
+```
+
+remove the rownames
+
+```{r}
+rownames(hec) <- NULL
+```
+
+Simple random assignment 
+
+```{r}
+Z1 <- simple_ra(N = N) #randomzr package. It aids to random allocation the treatments.
+table(Z1)
+```
+
+We can create unbalance design by changing the probability
+
+```{r}
+Z2 <- simple_ra(N = N, prob = 0.30)
+table(Z2)
+```
+
+We can have more than two groups (i.e, arms)
+
+```{r}
+Z3 <- simple_ra(N = N, num_arms = 3)
+table(Z3)
+```
+
+Create IDs and use a function that ad the allocation in our data set
+
+```{r}
+hec$ID <- paste0("ID", seq_len(nrow(hec)))
+simple_alloc <- function(x){
+  set.seed(343)   # for reproducibility 
+  cbind(x, Allocation = randomizr::simple_ra(N = nrow(x)))
+  }
+my_alloc <- simple_alloc(hec)
+head(my_alloc)
+```
+
+# checking balance for each variable
+
+```{r}
+prop.table(table(my_alloc$Allocation, my_alloc$Hair))
+prop.table(table(my_alloc$Allocation, my_alloc$Eye))
+prop.table(table(my_alloc$Allocation, my_alloc$Sex))
+```
+
+3. One source of variation
+
+Load data for the practice example
+```{r}
+Outcome <- c(20, 22, 18, 14, 21, 24, 28, 26, 20, 26, 20, 10, 12, 8, 11, 9)
+Treat <- c(rep(1, 5), rep(2,6), rep(3,5))
+```
+
+Create a data frame
+
+```{r}
+dat1 <-  data.frame(cbind(Treat, Outcome))
+names(dat1) <- c("Treatment", "Outcome")
+```
+
+Load package and output descriptive by group
+
+```{r}
+df1_ex1 <-  dat1 %>% # the names of the new data frame and the data frame to be summarised
+  group_by(Treatment) %>%   # the grouping variable
+  dplyr::summarise(mean_T = mean(as.numeric(Outcome)),  # calculates the mean of each group
+                   md_T = median(as.numeric(Outcome)), #includes the median
+                   var_T = var(as.numeric(Outcome)), # calculates the variance of each group
+                   n_T = n(),  # calculates the sample size per group
+                   sum_Y =  sum(as.numeric(Outcome)), # sum of the outcome
+                   sum_Y2 = sum(as.numeric(Outcome)^2), # sum of the outcome sqaure 
+                   SE_T = sd(as.numeric(Outcome))/sqrt(n())) # calculates the standard error of each group
+```
+
+Print descriptives
+
+```{r}
+df1_ex1
+```
+
+fit the model
+
+```{r}
+fit_aov <- aov(Outcome ~ as.factor(Treatment), data = dat1)
+summary(fit_aov)
+```
+
+Tukey multiple pairwise-comparisons
+
+```{r}
+TukeyHSD(fit_aov)
+```
+
+Error Bar
+
+```{r}
+ggplot(dat1, aes(Treatment, Outcome)) +
+  stat_summary(fun.data = mean_se, geom = "errorbar") +
+  theme_classic()
+```
+
+Boxplot
+
+```{r}
+ggplot(dat1, aes(x=as.factor(Treatment), y=Outcome)) +
+  geom_boxplot(fill= "gray", color="black") +
+  theme_classic()
+```
+
+Assumptions
+
+```{r}
+bartlett.test(Outcome ~ as.factor(Treatment), data = dat1) #we must describe the model analyzed
+car::leveneTest(Outcome ~ as.factor(Treatment), data = dat1)
+```
+
+Plot assumptions
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit_aov)
+```
+
+4. Two sources of variation
+
+First load data
+
+```{r}
+dat <- read.table(header=TRUE, text='
+ subject gender   age before after
+       1   F   old    9.5   7.1
+       2   M   old   10.3  11.0
+       3   M   old    7.5   5.8
+       4   F   old   12.4   8.8
+       5   M   old   10.2   8.6
+       6   M   old   11.0   8.0
+       7   M young    9.1   3.0
+       8   F young    7.9   5.2
+       9   F   old    6.6   3.4
+      10   M young    7.7   4.0
+      11   M young    9.4   5.3
+      12   M   old   11.6  11.3
+      13   M young    9.9   4.6
+      14   F middle    8.6   6.4
+      15   F young   14.3  13.5
+      16   F   old    9.2   4.7
+      17   M young    9.8   5.1
+      18   F   old    9.9   7.3
+      19   F young   13.0   9.5
+      20   M young   10.2   5.4
+      21   M young    9.0   3.7
+      22   F middle    7.9   6.2
+      23   M   old   10.1  10.0
+      24   M middle    9.0   1.7
+      25   M middle    8.6   2.9
+      26   M middle    9.4   3.2
+      27   M middle    9.7   4.7
+      28   M middle    9.3   4.9
+      29   F middle   10.7   9.8
+      30   M   old    9.3   9.4 ')
+```
+
+Check data structure
+
+```{r}
+head(dat)
+```
+
+Descriptive
+
+```{r}
+dat %>%
+  group_by(gender, age) %>%
+  summarise(N = n(), Mean = mean(after, na.rm=TRUE),  SD = sd(after, na.rm=TRUE))
+```
+
+Model with interaction
+
+```{r}
+m1 <- lm(after ~ as.factor(gender) + as.factor(age) + as.factor(gender):as.factor(age), data = dat)
+summary(m1)
+```
+
+Pairs averaged over age
+
+```{r}
+(pigs_m1_a <- pairs(emmeans(m1, "age")))
+```
+
+Pairs averaged over gender
+
+```{r}
+(pigs_m1_g <- pairs(emmeans(m1, "gender")))
+plot(pigs_m1_a, comparisons = TRUE)
+```
+
+Check comparisons 
+
+```{r}
+coef(pigs_m1_a)
+```
+
+Using a glht
+
+```{r}
+m1_dun <-  multcomp::glht(m1, linfct = mcp (age ="Dunnett"),
+                          alternative = "greater")
+summary(m1_dun)
+```
+SUM SQUARES
+
+The order of the factor matters here
+
+```{r}
+fit1a <- aov(after ~ gender + age + gender:age, data = dat)
+fit1b <- aov(after ~ age + gender  + age:gender, data = dat)
+summary(fit1b)
+summary(fit1a)
+```
+
+The sum squares adds to the total
+
+```{r}
+SS.I1 <- anova(lm(after ~ 1,                 data=dat),
+               lm(after ~ gender,               data=dat))
+SS.I2 <- anova(lm(after ~ gender,               data=dat),
+               lm(after ~ gender+age,           data=dat))
+SS.Ii <- anova(lm(after ~ gender+age,           data=dat),
+               lm(after ~ gender+age + gender:age, data=dat))
+
+SS.I1[2, "Sum of Sq"]
+
+SS.I2[2, "Sum of Sq"]
+
+SS.Ii[2, "Sum of Sq"]
+```
+
+TOTAL SS
+
+```{r}
+sstot <- anova(lm(after ~ 1,       data=dat),
+               lm(after ~ gender:age, data=dat))
+sstot[2, "Sum of Sq"]
+
+SS.I1[2, "Sum of Sq"] + SS.I2[2, "Sum of Sq"] + SS.Ii[2, "Sum of Sq"]
+```
+
+ANOVA with SS II
+
+```{r}
+(fit2a <- Anova(lm(after ~ gender + age 
+                  + gender:age, data = dat), type = "II"))
+(fit2b <- Anova(lm(after ~ age + gender 
+                  + age:gender, data = dat), type = "II"))
+```
+
+TOTAL SS
+
+```{r}
+sstot <- anova(lm(after ~ 1,       data=dat),
+               lm(after ~ gender:age, data=dat))
+sstot[2, "Sum of Sq"]
+
+```
+
+Total Type II do not add
+
+```{r}
+fit2a[1, 1] + fit2a[2,1] + fit2a[3,1] + fit2a[4,1]
+```
+
+ANOVA with SS III
+Hypotheses are only tested when using effect- or orthogonal coding for categorical variables
+
+```{r}
+(fit3a <- Anova(lm(after ~ gender + age 
+                  + gender:age, data = dat,
+                  contrasts=list(gender = contr.sum, age =contr.sum)), type = "III"))
+```
+
+It does not get affected by order
+
+```{r}
+(fit3b <- Anova(lm(after ~ age + gender 
+                  + age:gender, data = dat,
+                  contrasts=list(age = contr.sum, gender =contr.sum)), type = "III"))
+```
+
+TOTAL SS
+
+```{r}
+sstot <- anova(lm(after ~ 1,       data=dat),
+               lm(after ~ gender:age, data=dat))
+sstot[2, "Sum of Sq"]
+```
+# Total Type III do not add
+fit3a[1, 1] + fit3a[2,1] + fit3a[3,1] + fit3a[4,1]
+
+#-------------------------------------------------
+## POWER
+#-------------------------------------------------
+# a single estimation
+powerInteract2by2(n=35, tauBetaSigma=.3, alpha=0.05, nTests=1)[1]
+
+nvals <- c(5, 10, 20, 40)
+deltas <- c(0.3, 0.4, 0.5)
+plot(nvals, seq(0,1, length.out=length(nvals)), xlab="n", ylab="power",
+     main="Power Curve for\nTwo-way Interaction", type="n")
+for (i in 1:3) {
+  powvals <- sapply(nvals, 
+                    function (x) powerInteract2by2(n=x,
+                                                   tauBetaSigma=deltas[i], alpha=0.05, nTests=1)[1])
+  lines(nvals, powvals, lwd=2, col=i)
+}
+abline(h=.8, lty = 2)
+legend("bottomright", lwd=2, col=1:3, legend=c("0.3", "0.4", "0.5"))
+
+
+
+
+--------------------------------------------------------
+
+set.seed(357)
+# generate some data
+my_data <- data.frame( X1 = rnorm(10, 0, 1),
+                       X2 = rnorm(10, 5, 1),
+                       X3 = rnorm(10, 2, 2),
+                       X4 = rnorm(10, 6, 1))
+# lets see the data
+my_data
+
+# linear combination of means and output via t-tes
+t.test(apply(my_data[, c(1,3)],2,mean)-apply(my_data[, c(2,4)],2,mean))[[5]]/2
+
+# another alternative setting linear combinations
+# this is what we do by contrasts
+t.test(t(t(my_data)*c(1,-1,1,-1)))
+# Or creating an object first
+contr1 <- c(1,-1,1,-1)
+t.test(t(t(my_data)*contr1))
+
+# here is another alternative for it
+
+y <- as.vector(as.matrix(my_data))
+treat <- factor(rep(1:4, each = 10))
+
+head(cbind(y,treat))
+
+tail(cbind(y,treat))
+
+fit1 <- lm(y ~ treat)
+summary(fit1)
+
+# adjusted pairs comparison using Tukey
+pairs(emmeans(fit1, ~ treat))
+# unadjusted pairs comparison
+# difference between 1 and 3 and 2 and 4 
+pairs(emmeans(fit1, ~ treat), adjust = "none")
+
+# here we manipulate the design matrix
+(X <- model.matrix(fit1))  # design/model matrix
+t(X)%*%X  # can you identify what occurs in this matrix?
+solve(t(X)%*%X) # and this one?
+
+# how about this way?
+contrasts(treat)  # first group is droped
+# now defined our own 
+levels(treat) # check the order of factor levels
+c1 <- c(0,0,0,0)
+c2 <- c(1,-1, 1,-1)
+c3 <- c(0,0,0,0)
+mat <- cbind(c1,c2,c3)
+contrasts(treat) <- mat
+fit2 <- lm(y ~ treat )
+coef(fit2)
+mean(y)
+
+
+# Here we just change the reference group
+# assume that three is what we want as a reference group now
+contrasts(treat) <-'contr.treatment'(levels(treat), base = 3)
+fit3 <- lm(y ~ treat )
+coef(fit3)
+# compare to fit1
+coef(fit1)
+apply(my_data,2,mean) # means of each group
+
+# Now two-way data (recall this data is just for example)
+dat <- read.table(header=TRUE, text='
+ subject gender   age before after
+                  1   F   old    9.5   7.1
+                  2   M   old   10.3  11.0
+                  3   M   old    7.5   5.8
+                  4   F   old   12.4   8.8
+                  5   M   old   10.2   8.6
+                  6   M   old   11.0   8.0
+                  7   M young    9.1   3.0
+                  8   F young    7.9   5.2
+                  9   F   old    6.6   3.4
+                  10   M young    7.7   4.0
+                  11   M young    9.4   5.3
+                  12   M   old   11.6  11.3
+                  13   M young    9.9   4.6
+                  14   F middle    8.6   6.4
+                  15   F young   14.3  13.5
+                  16   F   old    9.2   4.7
+                  17   M young    9.8   5.1
+                  18   F   old    9.9   7.3
+                  19   F young   13.0   9.5
+                  20   M young   10.2   5.4
+                  21   M young    9.0   3.7
+                  22   F middle    7.9   6.2
+                  23   M   old   10.1  10.0
+                  24   M middle    9.0   1.7
+                  25   M middle    8.6   2.9
+                  26   M middle    9.4   3.2
+                  27   M middle    9.7   4.7
+                  28   M middle    9.3   4.9
+                  29   F middle   10.7   9.8
+                  30   M   old    9.3   9.4 ')
+
+dat
+
+dat %>%
+  group_by(gender, age) %>%
+  summarise(N = n(), Mean = mean(after, na.rm=TRUE),  SD = sd(after, na.rm=TRUE))
+
+# fit the model
+m1 <- lm(after ~ gender + age + gender:age, data = dat)
+summary(m1)
+# pairs averaged over age
+(pigs_m1_a <- pairs(emmeans(m1, "age")))
+# pairs averaged over gender
+(pigs_m1_g <- pairs(emmeans(m1, "gender")))
+plot(pigs_m1_a, comparisons = TRUE)
+
+# get the coefficients
+coef(pigs_m1_a)
+# get some polynomial contrast
+(const_poly <- contrast(emmeans(m1, "age"), "poly"))
+coef(const_poly )
+
+# another example with anothr package
+m1_dun <-  multcomp::glht(m1, linfct = mcp (age ="Dunnett"),
+                          alternative = "greater")
+summary(m1_dun)
+
+# the end 
+
+
+
+
+# Exercise 6
+# ANCOVA
+
+## packages
+
+
+# data generation
+set.seed(3)
+n <- 20
+p <- 2
+A.eff <- c(40, -15)
+beta <- -0.45
+sigma <- 4
+B <- rnorm(n * p, 0, 15)
+A <- gl(p, n, lab = paste("Group", LETTERS[1:2]))
+mm <- model.matrix(~A + B)
+dat <- data.frame(A = A, B = B, 
+                  Y = as.numeric(c(A.eff, beta) %*% t(mm)) +
+                    rnorm(n * p, 0, 4))
+dat$B <- dat$B + 20
+names(dat) <- c("treat", "pre", "post")
+
+head(dat)
+str(dat)
+dat %>%
+  group_by(treat) %>%
+  summarise(N = n(), 
+            Mean = mean(post, na.rm=TRUE),  
+            SD = sd(post, na.rm=TRUE))
+
+# some plots
+par(mfrow=c(1,2))  
+boxplot(pre ~ treat, dat)
+boxplot(post ~ treat, dat)
+
+# fitting ancova model
+## HH package needed for this line below
+# mod <- ancova(post ~ treat + pre, data=dat)
+# pred <- predict(mod)
+
+pred <- predict(lm(post ~ treat + pre, data = dat))
+# plotting 
+ggplot(data = cbind(dat, pred),
+       aes(pre, post, color=treat)) + geom_point() +
+  facet_grid(. ~ treat) + geom_line(aes(y=pred))
+
+# testing the interaction
+anova(lm(post ~ treat * pre, data = dat))
+pred <- predict(lm(post ~ treat * pre, data = dat))
+
+
+# if not interested into looking at the effect of the cov
+fit1 <- lm(post ~ treat + pre, data = dat)
+anova(fit1)
+# otherwise, type III sums of squares
+contrasts(dat$treat) <- contr.sum
+fit2 <- lm(post ~ treat + pre, data = dat)
+anova(fit2)
+
+# analyses
+summary(lm(post ~ treat + pre, data = dat))
+confint(lm(post ~ treat + pre, data = dat))
+# which are aligned with the coef of the mod above from the HH
+# coef(mod)
+
+## with interaction
+# generate some data for power
+possible.ns <- seq(from=100, to=1000, by=50)
+powers <- rep(NA, length(possible.ns))
+powers.cov <- rep(NA, length(possible.ns))        # Need a second empty vector
+alpha <- 0.05
+sims <- 500
+for (j in 1:length(possible.ns)){
+  N <- possible.ns[j]
+  
+  significant.experiments <- rep(NA, sims)
+  significant.experiments.cov <- rep(NA, sims) # Need a second empty vector here too
+  
+  for (i in 1:sims){
+    gender <- c(rep("F", N/2), rep("M", N/2))       # Generate "gender" covariate
+    age <- sample(x=18:65, size=N, replace=TRUE)    # Generate "age" covariate
+    effectofgender <- 10                            # Hypothesize the "effect" of gender on income
+    effectofage <- 2                                # Hypothesize the "effect" of age on income
+    
+    ## Hypothesize Control Outcome as a function of gender, age, and error
+    Y0 <- effectofgender*(gender=="M") + 
+      effectofage*age +
+      rnorm(n=N, mean=100, sd=20)
+    
+    ## This is all the same ##
+    tau <- 5
+    Y1 <- Y0 + tau
+    Z.sim <- rbinom(n=N, size=1, prob=.5)
+    Y.sim <- Y1*Z.sim + Y0*(1-Z.sim)
+    fit.sim <- lm(Y.sim ~ Z.sim)
+    
+    ## This is the novel analysis -- including two covariates to increase precision ##
+    fit.sim.cov <- lm(Y.sim ~ Z.sim + 
+                        (gender=="M") + age)
+    
+    ## extract p-values and calculate significance ##
+    p.value <- summary(fit.sim)$coefficients[2,4]
+    p.value.cov <- summary(fit.sim.cov)$coefficients[2,4]
+    significant.experiments[i] <- (p.value <= alpha)
+    significant.experiments.cov[i] <- (p.value.cov <= alpha)
+  }
+  
+  powers[j] <- mean(significant.experiments)
+  powers.cov[j] <- mean(significant.experiments.cov)
+}
+
+# some plot of power
+plot(possible.ns, powers, ylim=c(0,1))
+points(possible.ns, powers.cov, col="red")
+
+# Can you compute effect sizes using pooled SD and root mean squared error?
+# recall the last point of the handout
+
+summary(fit2)
+sigma(fit2)
+
+# d using sqrt MSE
+coef(fit2)[2] / sigma(fit2)
+
+# d using pool 
+
+newdat <- dat %>%
+  group_by(treat) %>%
+  summarise(N = n(), 
+            Mean = mean(post, na.rm=TRUE),  
+            var = var(post, na.rm=TRUE)) # change to be var
+newdat <- as.data.frame(newdat)
+
+(Spool <- sqrt(((newdat[1,2]  - 1 ) * newdat[1,3] + 
+                  (newdat[2,2]  - 1 ) * newdat[2,3])/
+                 (newdat[1,2] + newdat[2,2] - 2)))
+# so d is
+coef(fit2)[2] / Spool
+
+#Exercise 7
+
+# RBD
+
+#an example with two treatments and 3 levels on the blocking variable
+treat <- c(1,2)
+outdesign <- design.rcbd(treat, 3, seed = 12)
+(rcb <- outdesign$book)
+levels(rcb$block) <- c("large", "medium", "small")
+head(rcb)
+
+
+#an example with four treatments and 4 levels on the blocking variable
+treat <- c(1,2,3,4)
+outdesign <- design.rcbd(treat, 4, seed = 12)
+(rcb <- outdesign$book)
+levels(rcb$block) <- c("block1", "block2", "block3", "block4")
+head(rcb)
+
+# lets load the package
+
+# Load dataset
+data(HairEyeColor)
+HairEyeColor <- data.frame(HairEyeColor)
+
+# Transform so each row is a subject
+# Columns describe subject's hair color, eye color, and gender
+hec <- HairEyeColor[rep(1:nrow(HairEyeColor),
+                        times = HairEyeColor$Freq), 1:3]
+
+# lets see the few first and last units on the data set  
+head(hec)
+tail(hec)
+
+# total sample size 
+N <- nrow(hec)
+
+# remove the rownames
+rownames(hec) <- NULL
+
+# simple random assignment 
+Z1 <- simple_ra(N = N)
+table(Z1)
+#----------------------------------------------------
+# Now lets block in Hair
+Z <- block_ra(blocks = hec$Hair)
+table(Z, hec$Hair)
+
+# How about having T1 and T2 and Ctrl?
+Z <- block_ra(blocks = hec$Hair, conditions = c("T1", "T2", "Ctrl"))
+table(Z, hec$Hair)
+head(Z)
+# creates ID 
+hec$ID <- paste0("ID", seq_len(nrow(hec)))
+
+rbd_alloc <- function(x){
+  set.seed(343)   # for reproducibility 
+  cbind(x, Allocation =
+          randomizr::block_ra(blocks = x$Hair, 
+                              conditions = c("T1", "T2", "Ctrl")) )
+}
+my_alloc <- rbd_alloc(hec)
+head(my_alloc)
+table(my_alloc$Hair, my_alloc$Allocation)
+# write.csv(my_alloc, "my_allocation.csv") # always save this file 
+
+
+# outcome 
+set.seed(123)
+my_alloc$scores <-  rnorm(nrow(my_alloc), 5, 2)
+head(my_alloc)
+
+
+my_alloc %>%
+  group_by(Allocation, Hair) %>%
+  summarise(N = n(), Mean = mean(scores, na.rm=TRUE), 
+            SD = sd(scores, na.rm=TRUE))
+
+
+
+
+my_alloc$scores <-  rnorm(nrow(my_alloc), 5, 2)
+head(my_alloc)
+
+
+my_alloc %>%
+  group_by(Allocation, Hair) %>%
+  summarise(N = n(), Mean = mean(scores, na.rm=TRUE),  
+            SD = sd(scores, na.rm=TRUE))
+
+
+
+# boxplot
+ggplot2::ggplot(my_alloc,
+                aes(x=as.factor(Allocation), 
+                    y=scores, 
+                    fill = as.factor(Hair))) +
+  geom_boxplot() 
+
+
+
+
+
+# boxplot
+ggplot2::ggplot(my_alloc,
+                aes(x=as.factor(Hair), 
+                    y=scores, 
+                    fill = as.factor(Allocation))) +
+  geom_boxplot() 
+
+
+
+# model 1
+fit1a <- lm(scores ~ Hair + Allocation, data = my_alloc)
+anova(fit1a)
+
+fit1b <- lm(scores ~ Allocation + Hair, data = my_alloc)
+anova(fit1b)
+
+drop1(fit1a, ~.)
+
+
+
+
+my_alloc %>%
+  group_by(Allocation) %>%
+  summarise(N = n(), Mean = mean(scores, na.rm=TRUE),
+            SD = sd(scores, na.rm=TRUE))
+
+
+
+
+my_alloc %>%
+  group_by(Hair) %>%
+  summarise(N = n(), Mean = mean(scores, na.rm=TRUE),  
+            SD = sd(scores, na.rm=TRUE))
+
+with(my_alloc, interaction.plot(my_alloc$Allocation, 
+                                my_alloc$Hair, my_alloc$scores))
+with(my_alloc, interaction.plot(my_alloc$Allocation, 
+                                my_alloc$Hair, my_alloc$scores, ylim = c(0,10)))
+
+
+
+fit2a <- lm(scores ~ Hair + Allocation + 
+              Hair:Allocation, data = my_alloc)
+anova(fit2a)
+
+
+summary(glht(fit1a,  linfct=mcp(Allocation="Tukey")))
+# how about fit2 with the interaction
+summary(glht(fit2a,  linfct=mcp(Allocation="Tukey"))) # it will not run
+
+
+
+fit2a.em <- emmeans(fit2a, "Allocation")
+pairs(fit2a.em)
+
+
+with(my_alloc, leveneTest(scores,
+                          interaction(Hair, Allocation)))
+
+plot(fit2a, 1)
+
+plot(fit2a, 2)
+
+plot(fit2a, 3)
+plot(fit2a, 4)
+# Power
+
+
+
+bmin <-2
+bmax <- 4
+alpha <- .05 
+sigma2 <- 1 # mean square error
+css <- 5  # sum of treatment effects squares
+blocks <- seq(bmin, bmax)
+nu1 <- 3 -1  # df numerator
+nu2 <- (blocks -1 ) * nu1 # df denominator
+nc <- (blocks *css) /sigma2
+power <- Fpower(alpha, nu1, nu2, nc)
+data.frame(blocks, nu1, nu2, nc, power)
+
+
+
+#----------------- from Seohee ------------------------------------------
+
+com_block_random_p <- function(alpha, sigma2, del, nu, b, s) {
+  v1 <- nu-1
+  v2 <- nu*(b*s-1)
+  fvalue <- qf(1 - alpha,v1, v2)
+  phi <- sqrt(b*s*del^2/ (2*nu*sigma2))
+  noncn <- nu*phi^2
+  power <- 1-pf(fvalue, v1, v2, noncn)
+  data.frame(alpha, sigma2, del, nu, b, s, power)
+}
+
+nu<- 5
+del<- 0.5
+sigma2<- 0.4
+alpha<- 0.05
+b <- 3
+s <- seq(10, 75)
+com_block_random_p(alpha, sigma2, del, nu, b, s)
+
+b <- seq(1,20)
+s <- 13
+com_block_random_p(alpha, sigma2, del, nu, b, s)
+
+#Exercise 8
+
+# BIBDs
+
+## - v: number of treatments \nu in our notation
+## - b: number of blocks
+## - r: number of replicates (across all blocks)
+## - k: number of units per block
+## - lambda: lambda
+bibd(v = 6, b = 10, r = 5, k = 3, lambda = 2) 
+
+
+data("taste")  # load data
+head(taste)    # check first observations
+table(taste$panelist, taste$recipe)  # check number of recipe and panelist
+# lets confirm if this is a BIBDs
+(my_tab <- table(taste$panelist, taste$recipe))
+(des1 <- t(apply(my_tab, 1, function(x) (1:4)[x != 0])))
+crossdes::isGYD(des1)
+
+
+# the correct way
+fit <- aov(score ~ panelist + recipe, data = taste)
+drop1(fit, test = "F")
+# wrong way 1
+summary(aov(score ~ panelist + recipe, data = taste))
+# wrong way 2
+summary(aov(score ~ recipe +panelist , data = taste))
+
+## And how about multiple comparisons
+
+contr <- glht(fit, linfct = mcp(recipe = "Tukey"))
+summary(contr)
+
+
+
+
+
+# Youden Squares
+
+cond <- c("cond1","cond2","cond3","cond4")
+r<-3
+## - trt: Treatments
+## - r: number of replicates or number of columns
+## - serie: number of plot
+## - seed: seed number 
+## - kinds: methods for randomization
+## - first: TRUE or FALSE - randomize rep 1
+## - randomization: TRUE or FALSE - randomize 
+outdesign <-design.youden(trt = cond, r = r, serie=2, seed=23)
+youden <- outdesign$book
+print(outdesign$sketch)
+plots <-as.numeric(youden[,1])
+print(matrix(plots,byrow=TRUE,ncol=r))
+print(youden) # field book
+
+#Sumplemental materials
+# A. Effect size (Cohen's d) ----------------------------------------------------------
+# What is effect size? 
+# the magnitude of the effect of the intervention, relative to a comparison group, on some measure of outcome.
+
+## Calculate Cohen's d  
+# Input information of treatment group (mean, sd, n) 
+y.t <- 103
+sd.t <- 5.5
+n.t <- 50 
+# Input information of control group (mean, sd, n)
+y.c <- 100; sd.c <- 4.5; n.c <- 50   
+
+# if we assume that sd.t=sd.c then we can calculate Cohen's d
+numerator <- (n.t-1)*sd.t^2 + (n.c-1)*sd.c^2  # Calculate the numerator of the pooled standard deviation 
+s.pooled <-sqrt(numerator/(n.t+n.c-2)) # Calculate the pooled standard deviation
+##The Pooled Standard Deviation: a weighted average of each group's standard deviation.
+(y.t-y.c)/s.pooled # Calculate Cohen's d
+
+
+## Calculate Cohen's d with function 
+# create function for Cohen's d
+ES.d <- function (y.t, sd.t, n.t, y.c, sd.c, n.c)
+{
+  numerator <- (n.t-1)*sd.t^2 + (n.c-1)*sd.c^2
+  s.pooled <-sqrt(numerator/(n.t+n.c-2))
+  (y.t-y.c)/s.pooled
+  
+}
+
+## Calculate Cohen's d with function 
+ES.d(y.t = 103,  sd.t =5.5, n.t = 50, y.c=100, sd.c = 4.5, n.c = 50  ) # treatment vs control 
+
+d1<-ES.d(103, 5.5, 50, 100, 4.5, 50) # # treatment vs control
+d2<-ES.d(120, 5.5, 50, 100, 4.5, 50) # # treatment vs control
+d3<-ES.d(131, 5.5, 50, 100, 4.5, 50) # # treatment vs control
+d4<-ES.d(120, 5.5, 55, 100, 4.5, 50) # # treatment vs control
+
+median(c(d1,d2,d3,d4)) 
+
+
+# B. Compute Sample Size and Power --------------------------------------------------
+install.packages("pwr") 
+
+## Elements for pwr.t.test##
+# n: Number of observations 
+# d: Effect size (Cohen's d)
+# sig.level: Significance level(alpha) 
+# power: Power of test (1-beta)
+# type: 'one.sample',"two.sample", or "paired"
+
+
+## Calculate sample size 
+pwr.t.test(n= , d=.60, sig.level = .05, power=.8, type="two.sample") 
+pwr.anova.test(k=4 , f=.60, sig.level =.05, power=.8)
+
+pwr.t.test(n=, d=.60, sig.level = .05, power=.9, type="two.sample") 
+
+
+# C. Implementing ANOVA from A to Z---------------------------
+# A summer reading comprehension intervention 
+# 4 groups (n=10 per group): g1 - control; g2 - teachers; g3 -parents ; g4 - computer
+
+# C.1 Read data ------------------------------------------------------------
+setwd("~/classdata/LAB")
+
+soap.data <- read.table("soap_new.txt") 
+soap.data
+View(soap.data)
+summary(soap.data)
+str(soap.data)
+## change group variable into factor 
+
+soap.data$Soap <- factor(soap.data$Soap)
+summary(soap.data) # Summarize soap.data 
+soap.data
+
+
+
+# C.2 Simple descriptive statistics ----------------------------------------
+
+install.packages("dplyr") # Install "dplyr" package 
+
+
+
+simple.stat <- soap.data  %>% # Data name 
+  group_by(Soap) %>% # By group  
+  dplyr::summarise( COUNT = n(), # number of subjects 
+                    MEAN = mean(WtLoss, na.rm = TRUE), # mean function
+                    SD = sd(WtLoss, na.rm = TRUE) # sd function 
+  )
+simple.stat
+simple.stat <- data.frame(simple.stat)
+simple.stat
+write.csv(simple.stat, "simple_stat.csv")
+
+
+# C.3 Implement ANOVA ---------------------------------------------------------
+
+
+model1 <- aov(WtLoss ~ Soap, data = soap.data.no.na) #ANOVA
+
+summary(model1) #Summary of the analysis
+
+ANOVA.table <- anova(model1) # ANOVA table to save in a file 
+write.csv(ANOVA.table,"ANOVA_results.csv", na="") #save ANOVA table in ".csv" file 
+#na="" : dealing with missing values 
+
+# C.4 Follow-up test   ----------------------------------------------------
+#The TukeyHSD function can identify which groups are different and help you identify the largest ones. It uses the "honest significant differences" method invented by John Tukey.
+
+TukeyHSD(model1)
+plot(TukeyHSD(model1))
+
+# C.5 Assumption check ----------------------------------------------------
+
+## 1) assumption check with plot 
+
+plot(model1,1) #equal variances across samples 
+
+plot(model1,2) #normality 
+
+
+## 2)-1 homogeneity of variances
+
+# Bartlett Test of Homogeneity of Variances
+##Perform Bartlett's test of the null that the variances in each of the groups (samples) are the same.
+bartlett.test(WtLoss ~ Soap, data = soap.data.no.na) 
+#If p-value >.05, we cannot reject the null hypothesis
+#If p-value is less than or equal to 0.05, we reject the null and conclude that at least one variance is different from the others.  
+
+# Figner-Killeen Test of Homogeneity of Variances
+fligner.test(WtLoss ~ Soap, data = soap.data.no.na)
+
+## 2)-2 normality 
+# Shapiro-Wilk test of normality:the test rejects the hypothesis of normality when the p-value is less than or equal to 0.05.
+shapiro.test(model1$residuals)
+#p-value > .05, the data is normal. 
+
+model1$coefficients    
+model1$fitted.values
+#fitted values mean predicted values 
+
+# C.6 Calculate effect size -----------------------------------------------
+# Run the function for effect size if you did not Run this before. 
+
+ES.d <- function (y.t, sd.t, n.t, y.c, sd.c, n.c)
+{
+  numerator <- (n.t-1)*sd.t^2 + (n.c-1)*sd.c^2
+  s.pooled <-sqrt(numerator/(n.t+n.c-2))
+  (y.t-y.c)/s.pooled
+  
+}
+ES.d
+simple.stat
+
+
+d1<-ES.d(103, 5.5, 50, 100, 4.5, 50) # # treatment vs control
+d2<-ES.d(120, 5.5, 50, 100, 4.5, 50) # # treatment vs control
+d3<-ES.d(131, 5.5, 50, 100, 4.5, 50) # # treatment vs control
+d4<-ES.d(120, 5.5, 55, 100, 4.5, 50) # # treatment vs control
+median(c(d1,d2,d3,d4)) 
+
+#Week 20 (F20)
+
+# A Completely Randomized Design for two treatments and three observations on each trtmt, so a total of six observations. 
+# A. Randomization -----------------------------------------------------------------
+
+#Why randomize subjects? 
+#Suppose we want to plan an experiment to examine the effect of two reading interventions, there are two treatments. 
+#We want to randomize two treatments into observation
+
+## Section 3.9, pages 59-60
+
+# Create column trtmt = (1,1,1,2,2,2)
+trtmt <- c(1,1,1,2,2,2)  
+
+#length() function gets or sets the length of a vector (list)
+length(trtmt) # Length of column trtmt:6
+trtmt # View trtmt
+
+# Randomly sampling(selecting) 6 elements from trtmt vector without replacement, meaning it will not select the same item twice##
+sample(trtmt, 6, replace = F) 
+sample(trtmt, length(trtmt), replace = F) # The same code with the previous line
+#replace=TRUE to sample with replacement,which means that one item can appear multiple times in the sample#
+
+
+# Randomly sample from a distribution.Using randome numbers, we can randomize subjects. 
+rnorm(100) #rnorm: generate the Normal distribution's random numbers
+
+rnorm(6, mean=50, sd=10 ) # Create column of 6 N(50,10^2) RVs
+
+ranno <- runif(length(trtmt)) # Create the column ranno consisting of 6 uniform random numbers between 0 and 1 
+# runif: generating uniform random numbers between 0 and 1
+# ranno: the randomization procedure
+
+# Create data.frame "design" consisting of trtmt and ranno#
+design <- data.frame(trtmt,ranno)  
+design  # Display the data.frame design
+
+order(ranno)  # Display the order of ranno by sorting from the smallest to the largest. 
+design <- design[order(ranno),]  # Sort the rows from the smallest to the largest based on the values of the RNs (ranno) in the design data 
+design  # Display design with rows sorted, for illustration only
+
+design$EU <- 1:6 # Add col Experimental Units = (1,2,3,4,5,6) to design
+design$EU <- c(1:6)  # Alternative way of adding col EU
+design  # Display the results of the randomization
+
+
+# B.Open data -------------------------------------------------------------
+
+## Set up working directory
+setwd("~/classdata/LAB/")
+
+getwd() # check the current directory 
+
+##Soap Experiment (p.20)
+#1) the Objective of Exp: compare the extent to which three types of soap dissolve in water
+#2) Treatment factors : three levels (regular, deodorant, and moisturizing brands) of soaps 
+#3) Experimental units : idential metal muffin pans filled with 1/4 cup of water heated to 100F
+#4) Randomly assign the cubes of each type of soap to the experimental units 
+
+# collect the data 
+## Read data (Table 3.10, p60)
+soap.data <- read.table("soap_new.txt") # Read "soap_new.txt" file in R 
+soap.data # View soap.data
+
+## Read "soap_new.txt" file in R with the heading and treating '-99' and 'NA' as missing values 
+soap.data<- read.table("soap_new.txt", header = TRUE, na.strings = c(NA,-99)) 
+#na.strings = c("NA","") and na = c("NA","") tells R to treat both NA and empty strings in columns of character data to missing.
+
+## Check opened data
+soap.data # View soap.data in Console
+View(soap.data) # View soap.data 
+head(soap.data) # Display first 6 observations of soap.data
+tail(soap.data) # Display last 6 observations of soap.data
+
+names(soap.data) # Variable names in soap.data
+str(soap.data)  # Structure of soap.data
+summary(soap.data) # Summarize soap.data 
+
+## Select the parts of the data
+
+soap.data[1,2] # Select the element of 1st row and 2nd column of soap.data
+soap.data[1, ] # Select the 1st row of soap.data
+soap.data[ ,1] # Select the 1st column of soap.data
+
+
+soap.data[c(1,3,4), ] # Select the 1st, 3rd, and 4th rows of soap.data
+soap.data[ ,c(3,4,5)] # Select the 3rd, 4th, and 5th columns of soap.data
+soap.data[ ,3:5] # Select the 3rd, 4th, and 5th columns of soap.data
+soap.data[,1:2]
+View(soap.data[,1:2])
+
+## Add factor variable fSoap to soap.data frame for later ANOVA
+summary(soap.data) # Summarize soap.data 
+soap.data$Soap <- factor(soap.data$Soap) # Convert numeric to factor(categorical variable)
+summary(soap.data) # Summarize soap.data 
+soap.data
+
+# C. Simple descriptive statistics ----------------------------------------
+
+## Install package "dplyr" and load it.
+##dplyr is a grammar of data manipulation, providing a consistent set of verbs that help you solve the most common data manipulation challenges:
+install.packages("dplyr") 
+
+## Calculate number of subjects, mean, and sd for groups(factors)
+## %>% :the object on the left hand side is passed as the first argument to the function on the right hand side.
+soap.data %>% # (percent greater than percent)  #Data name 
+  group_by(Soap) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(WtLoss, na.rm = TRUE), # mean 
+                    sd = sd(WtLoss, na.rm = TRUE) # sd
+  )
+#:: (colon): Access variables in a name space
+# na.rm=TRUE tells R to ignore the NA values and remove observations with missing values 
+
+
+## Delete rows with missing values 
+complete.cases(soap.data) # Find cases (rows) which do not have any missing values 
+
+soap.data.no.na <- soap.data[complete.cases(soap.data), ] # Store the rows which do not have any missing values: listwise deletion
+
+## Calculate number of subjects, mean, and sd for the rows with no missing values by groups(factors) 
+simple.stat <- soap.data.no.na %>% # Data name 
+  group_by(Soap) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(WtLoss), # mean 
+                    sd = sd(WtLoss) # sd
+  )
+
+
+simple.stat # View simple.stat 
+simple.stat<- data.frame(simple.stat) # Put "simple.stat" into data frame
+row.names(simple.stat) <- c("1-Regular","2-Deodorant","3-Moisturizing") # Add row names 
+simple.stat # View simple.stat 
+
+write.csv(simple.stat,"simple_stat.csv") # Export "simple.stat" with ".csv" file.  
+
+
+# D. Create plots ----------------------------------------------------------
+
+## Plot WtLoss vs Soap 
+plot(WtLoss ~ Soap, data=soap.data.no.na, 
+     ylab = "Weight Loss (grams)",  xlab="Soap")
+#~tilde:used to separate the left- (response v) and right-hand (predictor) sides in a model formula.
+## Plot WtLoss vs Soap specify axis labels, suppress x-axis.
+##xlab(the x-axis label), ylab(the y-axis label)
+plot(WtLoss ~ Soap, data=soap.data.no.na, 
+     ylab = "Weight Loss (grams)",  xlab="Soap", las=1, xaxt = "n") 
+#las: y labels are parallel (=0) or perpendicular(=2) to axis. las=1: horizontally oriented. 
+#xaxt="n" and yaxt="n" suppress the x and y axis respectively. 
+
+#create custom axis using the axis( ) function.
+axis(1, at = c(1,2,3), 
+     labels = c("1-Regular","2-Deodorant","3-Moisturizing"))# Insert labels at the tick marks 1 to 3 on the x-axis.
+
+
+install.packages("ggplot2") # build every graph, so it is "Grammar of Graphics" design which tries to integrate a variety of different plotting functions into one coherent package.
+
+## Box plot 
+ggplot(soap.data.no.na, aes(x=Soap, y=WtLoss)) +  # Set up X and Y axes, ggplot2::aes: construct aesthetic mappings
+  geom_boxplot() + #Box plot
+  xlab("Soap Type") + # Label for X-axis
+  ylab("Weight Loss") + # Label for Y-axis
+  scale_x_discrete(labels = c("1-Regular","2-Deodorant","3-Moisturizing")) # Label for discrete value of X-axis
+
+## Error bar plot 
+ggplot(simple.stat, aes(rownames(simple.stat), mean)) + # Set up X and Y axes 
+  geom_errorbar(                             #Error bar plot
+    aes(ymin = mean - (1.96*sd), # Lower bound 
+        ymax = mean + (1.96*sd)), # Upper bound
+    width=0.2)+ # Width of end-line
+  xlab("Soap Type") + # Label for X-axis
+  theme_bw() # Make background black and white
+
+# E. Implement ANOVA ------------------------------------------------------
+
+## Implement one-way ANOVA (Table 3.11, p63) 
+model1 <- aov(WtLoss ~ Soap, data = soap.data.no.na)
+
+summary(model1) #Summary of the analysis
+
+ANOVA.table<-anova(model1) # ANOVA table to save in a file 
+write.csv(ANOVA.table,"ANOVA_results.csv")  #save ANOVA table in ".csv" file 
+
+## Assumption check for one-way ANOVA
+plot(model1,1) #Homogeneity of variance 
+##Homogeneity of variance is an assumption underlying both t tests and F tests (analyses of variance, ANOVAs) in which the population variances (i.e., the distribution, or "spread," of scores around the mean) of two or more samples are considered equal.
+#A residual plot: a plot of the standardized residuals fit against the levels of another variable,
+##the spread of the residuals for treatment 1 seems a little larger than the spread for the other two treatments. This could be interpreted as a sign of unequal variances of the error variables
+
+plot(model1,2) #Q-Q plot :want to know whether the data are normally distributed.
+
+
+# F. Calculate sample size ------------------------------------------------
+
+install.packages("pwr")
+
+
+## Calculate sample size given information
+pwr.anova.test(k = 3, sig.level = 0.05, power =0.9, f = 1.2) 
+#k: Number of Groups
+#n: Number of observation
+#f: Effect size; pai/sqrt(r)= sqrt(del^2/(2*k*sig2))
+#sig.level: Significance level (Type I error)
+#Power: Power of test
+
+#Week 4
+##when the raw data are not available
+#F max test: Homogeneity of Variance 
+install.packages("SuppDists")
+
+# 5 groups (n_j=50)
+#sig level:0.05, first number: n_j-1, number of groups: k 
+SuppDists::qmaxFratio(0.95, 49, k=5) #get the F max CV
+
+#Fmax = S^2max/S^2min
+#Fmax > CV, we reject H0
+#Fmax < CV, we retain H0 
+
+# Cochran's C (i.e., C ratio)
+
+# you need the outliers package 
+install.packages("outliers")
+
+#This test is useful to check if largest variance in several groups of data is "outlying" and this group
+#should be rejected
+x=runif(5) # for example we created five variances
+outliers::cochran.test(x,rep(49,5))  
+# the first number is the sample size of a group minus one
+# the second number is the number of groups
+
+# critical values
+outliers::qcochran(0.05,49,5)
+
+#Cochran's C = S^2max/sum of S^2 values 
+#Cochran's C > CV, we reject H0 
+#Cochran's C < CV, we fail to reject H0 
+
+# A. Inferences for Contrasts and Treatment Means -------------------------
+
+# Set up the working directory 
+setwd("~/classdata/LAB")
+
+# Open the data for week4
+Data.w4 <- read.table("Data_week4.txt", header=T)
+summary(Data.w4)
+
+Data.w4$Class <- as.factor(Data.w4$Class) # Make Class variable as factor
+summary(Data.w4)
+str(Data.w4)
+
+#aov: perform the ANOVA analysis
+
+model1 <- aov(Score ~ Class, data=Data.w4) # Fit aov model
+anova(model1) # Display 1-way ANOVA
+
+
+# Individual contrasts: estimates, CIs, tests 
+install.packages("emmeans")
+ 
+# Load "emmeans":Compute contrasts or linear functions of least-squares means, and comparisons of slopes
+#Least square means are means for groups that are adjusted for means of other factors in the model. 
+
+
+#lsmeans: Obtain least-squares means for many linear, generalized linear, and mixed models. Compute contrasts or linear functions of least-squares means, and comparisons of slopes.
+lsmType <- lsmeans(model1, ~ Class) # Compute and save lsmeans(Least-square means=predicted marginal means)
+lsmType
+
+
+# Display lsmeans and the corresponding 95% CIs for the treatment means 
+confint(lsmType, level=0.95) 
+
+# Comparisons without confidence interval 
+contrast(lsmType, list(C1=c( 1, 1,-1,-1)/2,
+                       C2=c( 1,-1, 1,-1)/2,
+                       C3=c( 1,-1,-1, 1)/2))
+
+
+# Comparsions with confidence interval
+# infer=c(T,T): requests confidence intervals and tests 
+summary(contrast(lsmType, list(C1=c( 1, 1,-1,-1)/2,
+                               C2=c( 1,-1, 1,-1)/2,
+                               C3=c( 1,-1,-1, 1)/2)),
+        infer=c(T,T), level=0.95, side="two-sided")
+
+
+
+# Tukey's method
+# TukeyHSD function can be used only with aov 
+TukeyHSD(model1)
+plot(TukeyHSD(model1))
+
+Tukey.table <- summary(contrast(lsmType, method="pairwise", adjust="tukey"),
+                       infer=c(T,T), level=0.95, side="two-sided")
+# infer=c(T,T): requests confidence intervals and tests
+# side = "two-sided": requests two-sided confidence intervals and tests
+Tukey.table
+
+write.csv(Tukey.table, "1way_Tukey.csv")
+
+# Dunnett's method: all treatment-versus-control comparisons 
+#uses critical values from the multivariate t-distribution, corresponding to adjust="mvt". These critical values are computed by simulation,
+#ref=1: illustrates the first (or any) level is the control.
+summary(contrast(lsmType, method="trt.vs.ctrl", adjust="mvt", ref=1),
+        infer=c(T,T), level=0.95, side="two-sided")
+
+Dunn <- summary(contrast(lsmType, method="trt.vs.ctrl", adjust="mvt", ref=1),
+                infer=c(T,T), level=0.95, side="two-sided")
+# infer=c(T,T): requests confidence intervals and tests
+
+write.csv( Dunn, "1way_Dunn.csv")
+
+
+# Assumption check ----------------------------------------------------
+
+## 1) assumption check with plot 
+
+plot(model1,1) #equal variances across samples 
+
+plot(model1,2) #normality 
+
+
+## 2)-1 homogeneity of variances
+
+# Bartlett Test of Homogeneity of Variances
+##Perform Bartlett's test (H0: the variances in each of the groups (samples) are the same).
+bartlett.test(Score ~ Class, data = Data.w4) 
+#If p-value >.05, we cannot reject the null hypothesis
+#If p-value is less than or equal to 0.05, we reject the null and conclude that at least one variance is different from the others.  
+
+
+## 2)-2 normality 
+# Shapiro-Wilk test of normality:the test rejects the hypothesis of normality when the p-value is less than or equal to 0.05.
+shapiro.test(model1$residuals)
+#p-value > .05, we cannot reject the null and conclude that the data are normal. 
+
+##Simple descriptive statistics 
+
+## Calculate number of subjects, mean, and sd for groups(factors)  
+Data.w4 %>% # Data name 
+  group_by(Class) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(Score, na.rm = TRUE), # mean 
+                    sd = sd(Score, na.rm = TRUE) # sd
+  )
+
+#na.rm=TRUE : ignore the NA values 
+
+# C.6 Calculate effect size -----------------------------------------------
+# Run the function for effect size if you did not Run this before. 
+
+ES.d <- function (y.t, sd.t, n.t, y.c, sd.c, n.c)
+{
+  numerator <- (n.t-1)*sd.t^2 + (n.c-1)*sd.c^2
+  s.pooled <-sqrt(numerator/(n.t+n.c-2))
+  (y.t-y.c)/s.pooled
+  
+}
+
+
+d1 <- ES.d(571, 36.9, 4,  860, 60.2, 4) # Class 1 vs Class 2
+d2 <- ES.d(571, 36.9, 4,  433, 45.4, 4) # Class 1 vs Class 3
+d3 <- ES.d(571, 36.9, 4,  496, 49.3, 4) # Class 1 vs Class 4
+d4 <- ES.d(860, 60.2, 4,  433, 45.4, 4) # Class 2 vs Class 3
+d5 <- ES.d(860, 60.2, 4,  496, 49.3, 4) # Class 2 vs Class 4
+d6 <- ES.d(433, 45.4, 4,  496, 49.3, 4) # Class 3 vs Class 4
+
+d1
+d2
+d3
+d4
+d5
+d6
+
+median(c(d1,d2,d3,d4,d5,d6)) 
+
+pwr.t.test(n= , d=2.52, sig.level = .05, power=.8, type="two.sample") #for t-test
+
+pwr.anova.test(k=4 , f= 2.52, sig.level =.05, power=.8) #for one-way ANOVA 
+
+
+## Calculate sample size given information
+v=4; del = 0.25; sig2 = 0.007
+pwr.anova.test(k = v, sig.level = 0.05, power =0.8, f = sqrt(del^2/(2*v*sig2))) 
+
+pwr.anova.test(k = 4, sig.level = 0.05, power =0.8, f = 1.2)
+pwr.anova.test(k = 3, sig.level = 0.05, power =0.9, f = 2.5)
+#k: Number of Groups
+#v:number of levels of the treatment factor
+#n: Number of observation
+#del: the difference to be detected
+#sig2:the assumed largest value of the error variance 
+#f: Effect size
+#sig.level: Significance level (Type I error: prob of rejecting a true H0)
+#Power: Power of test (prob of rejecting a false H0)
+
+#week 5
+
+# A. Create data for two way ANOVA --------------------------------------------
+
+subject <- 1:30 
+gender <- c("F","M","M","F","M","M","M","F","F","M","M","M","M",
+            "F","F","F","M","F","F", "M","M","F","M","M","M","M",
+            "M","M","F","M")
+age <- c("old","old","old","old","old","old","young","young","old","young",
+         "young","old","young","middle","young","old","young","old","young",
+         "young","young","middle","old",rep("middle",6),"old")
+after <- c(7.1, 11, 5.8, 8.8, 8.6, 8, 3, 5.2, 3.4, 4, 5.3, 11.3,
+           4.6, 6.4, 13.5,  4.7, 5.1, 7.3, 9.5, 5.4,3.7, 6.2, 10, 1.7, 
+           2.9, 3.2, 4.7, 4.9, 9.8, 9.4)
+
+
+dat<- data.frame(subject, gender, age, after)
+View(dat)
+
+str(dat)
+
+
+# B. Simple descriptive statistics  ---------------------------------------------------
+install.packages("dplyr")
+
+## Calculate number of subjects, mean, and sd for groups(factors)  
+dat %>% # Data name 
+  group_by(gender, age) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(after, na.rm = TRUE), # mean 
+                    sd = sd(after, na.rm = TRUE) # sd
+  )
+#na.rm=TRUE : ignore the NA values
+
+dat %>% # Data name 
+  group_by(age) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(after, na.rm = TRUE), # mean 
+                    sd = sd(after, na.rm = TRUE) # sd
+  )  
+
+
+dat %>% # Data name 
+  group_by(gender) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(after, na.rm = TRUE), # mean 
+                    sd = sd(after, na.rm = TRUE) # sd
+  )  
+
+# C. Fit the model ---------------------------------------------------------
+# with lm function 
+m1 <- lm(after~ gender + age + gender:age, data =dat)
+summary(m1)
+
+# with aov function
+a1 <- aov(after~ gender + age + gender:age, data =dat)
+summary(a1)
+
+
+## Anova table  from the model 
+anova.m1 <- anova(a1) 
+anova.m1
+
+setwd("~/classdata/LAB")
+#export Tukey table to my folder
+write.csv( anova.m1, "2way_ANOVA.csv")
+
+## coefficent from the model 
+
+coef(m1) # = coef(a1)
+
+
+# D.  Multiple Pairwise comparison (Tukey's method )  -----------------------------------
+
+TukeyHSD(a1)
+
+Tukey.table <- TukeyHSD(a1)
+write.csv( Tukey.table, "2way_Tukey.csv")
+
+## Homogeneity of variance check ----------------------
+plot(a1, 1)
+
+## Normality ------------------------------
+
+plot(a1, 2)
+
+# Extract residuals 
+aov_residuals <- residuals(object = a1)
+
+#Run Shapiro-wilk test
+shapiro.test(x = aov_residuals)
+#p>.05: we cannot reject H0 so data are normally distributed 
+
+##interaction plots ----------------------
+install.packages("ggplot2") #install ggplot2
+
+interaction.plot(dat$gender, dat$age, dat$after, xlab = "gender", ylab = "after", trace.label= "age")
+
+## interaction bar plots 
+ggplot2::ggplot(a1, aes(x=gender, y=after, fill = age)) + geom_boxplot()
+
+#Week 6
+
+########## data creation ########
+#subject <- 1:72 create from 1 to 72 subjects
+#Treatment <- c(rep("ind",24),rep("dem",24),rep("control",24))
+# Text difficulty <- rep(c(rep("easy",8), rep("intermediate",8),rep("hard", 8)), 3)
+# math score <- c()
+# data<- data.frame(subject, Treatment, Difficulty, score)
+# rep: create a series of repeated values
+# in the data, A is treatment groups and B is the level of text difficulty
+setwd("~/classdata/LAB")
+Data <-read.csv("2way_data.csv", header=T)
+str(Data) #showing data structure and content 
+Data$B <- factor(Data$B) #factor:identifies the distinct levels of the categorical data and packs them into a factor# 
+Data$A <- factor(Data$A)
+summary(Data)
+table(Data$A, Data$B)
+
+# A. Simple Descriptive Statistics -------------------------------------------
+
+#install.packages("dplyr")
+
+## Calculate number of subjects, mean, and sd for groups(factors)
+Stat.AB <- Data %>% # Data name 
+  group_by(A, B) %>% # By group  
+  dplyr::summarise(count = n(), # number of subjects 
+                   MEAN = mean(y, na.rm = TRUE), # mean 
+                   SD = sd(y, na.rm = TRUE) # sd
+  )
+
+Stat.AB <- data.frame(Stat.AB)
+Stat.AB
+#na.rm: Remove observations with missing values
+
+
+# B. Create Graphs ----------------------------------------------------------
+#install.packages("ggplot2")
+
+## Box plot by using Raw Data 
+ggplot(Data, aes(x= A , y= y)) +
+  geom_boxplot(aes(fill=B)) +
+  xlab("Factor A") + # Label for X-axis
+  ylab("y") # Label for Y-axis
+
+
+## Line plot by using Aggregated Data
+ggplot(Stat.AB, aes(x= A , y= MEAN, colour= as.factor(B), group=B)) +
+  geom_line(size=1) +
+  geom_point(size=2)
+
+
+
+# C. Implement 2-way ANOVA ---------------------------------------------------
+
+model.1 <- lm(y ~ A + B + A:B, data = Data)
+summary(model.1)
+
+ANOVA.table <- anova(model.1)
+ANOVA.table
+
+model.2 <- lm(y ~ B + A + A:B, data = Data)
+summary(model.2)
+
+ANOVA.table2 <- anova(model.2)
+ANOVA.table2
+
+write.csv(ANOVA.table, "ANOVA_table.csv")
+
+
+# D. Check the Model Assumptions-----------------------------------------------------
+## Check Assumptions with plots
+#par: set or query graphical parameters
+#mfrow: Given a number of plots n, find an arrangement for showing the plots in an array, set by par(mfrow=mfrow(n))
+par(mfrow=c(1,2)) #create 2x2 plotting area
+plot(model.1,1) #plot model 1.1 
+plot(model.1,2)
+
+## Assumption check with testing
+install.packages("car")
+
+leveneTest(y ~ A*B, data = Data) # Homogeneity of variance 
+
+shapiro.test(model.1$residuals) # Normality 
+
+# E. Testing Simple Effects---------------------------------------------------------
+
+#interactionMeans: calculate and plot adjusted means for interactions 
+fit.means <- interactionMeans(model.1)
+fit.means
+plot(fit.means)
+
+# marginal means of factor A 
+interactionMeans(model.1, factors = "A")
+
+#Testing simple main effects: evaluating contrasts across the levels of one factor while the values of the other interaction factors are fixed at certain levels. 
+#Here we test the effect of treatments at the different levels of text difficulty. 
+#A: treatment; B: levels of text difficulty 
+
+testInteractions(model.1, fixed="A", across = "B")
+
+#Here we test the effect of different levels of text difficulty across different treatments 
+
+testInteractions(model.1, fixed = "B", across = "A")
+
+#The interaction contrasts: differental effects or differences of differences 
+#This estimates contrasts between control and trt1, control and trt2, trt1 and trt2 across different levels of text difficulty
+testInteractions(model.1, pairwise = "A", across = "B")
+
+#Multiple comparisons
+testInteractions(model.1)
+
+#Week 6_2
+
+#A. how to create line plots for interaction
+#we have 3 * 2 cells with two factors, A and B. 
+#Factor A has self and comp levels.
+self <- c(50, 30, 14)
+comp <- c(40, 25, 22)
+A <- cbind("self", "comp")
+B <- rbind("no", "immed", "delayed")
+compr <- data.frame(B, self, comp)
+compr
+
+
+#Reshape wide format data into long format data. 
+#Use the following statements
+Y <- c(50,30,14,40,25,22)
+B <- rep(c("No","Immed", "Delayed"), 2)
+A <- rep(c("self","computer"), each=3)
+
+comprlong <- data.frame(Y,B, A) 
+comprlong
+
+ggplot(comprlong, aes(x= B , y= Y, colour= A, group=A)) +
+  geom_line(size=1,aes(linetype=A)) +
+  geom_point(size=2)
+
+
+# A. Compute power ------------------------------------------------------------------------------------------
+
+# Assume that we have 3 * 2 cells with two factors and the Spooled can be calculated using SSB, SSAB, SSW, Dfb, dfAB, and DFw from the two-way ANOVA results
+#matrix: shape a data with 2 columns into 3 rows 
+#nrow: number of rows 
+#ncol: number of columns 
+#factor A has self and comp levels. 
+#factor B has no, immed, and delayed levels. 
+#pooled standard deviation=sqrt([SSB+ SSAB + SSw]/[dfB+dfAB+dfw])
+Spooled <- 20
+
+#The interaction contrasts: differental effects or differences of differences 
+#This estimates contrasts between two kinds of instruction across factor B
+#d1 <- ((X11-X12)-(X21-X22)-(X31-X32))/(Spooled) # effect size
+#Spooled = sqrt([SSB+ SSAB + SSw]/[dfB+dfAB+dfw])
+d1 <- ((50-40)-(30-25)-(14-22))/(Spooled)
+d1
+# Install.package for power calculation 
+#install.packages("powerMediation")
+
+
+## Calculate Power 
+powerInteract(nTotal=90, a=2, b=3, effsize=d1, alpha=0.05, nTests=1) 
+#powerInteract: Power for detecting interaction effect in 2-way ANOVA.
+#nTotal:number of observations in total
+#a:number of levels in factor 1
+#b:number of levels in factor 2
+#effsize:effect size
+#alpha:type I error rate
+#nTests:number of tests. (Family-wise type I error rate will be controlled based on Bonferroni's correction)
+
+# B. Create the power curves to figure out the relationship between sample size and effect size ------------------------
+
+#a starting date (from), increment (by), and number of dates
+#length.out=desired length of the sequence. 
+#lwd: control the line width or thickness
+#lty: control the line type(solid, dashed, or dotted)
+#type="n": That will create a new plot, including title and axes, but will not (yet) plot the data
+#add a title (main)
+#Use abline to plot the diagonal line.
+#powerMediation:calculate power and sample size for testing (1) mediation effects(2) the slope in a simple linear regression; (3) odds ratio in a simple logistic regression; (4) mean change for longitudinal study with 2 time points; (5) interaction effect in 2-way ANOVA; and (6) the slope in a simple Poisson regression.
+#:(colon): from to 
+#abline(h=): h is horizontal line 
+#The "s" in "sapply" stands for "simplify." The function tries to simplify the results into
+#a vector or matrix.#
+#a loop with the for(). The argument to the for() consists of a variable, in this case i that gets assigned a value, and a list of values, in this case the vector 1:10
+
+nvals <- c(50, 100, 150, 200) # Set up the sample size
+deltas <- c(0.55, 0.65, 0.75) # Set up the effect size 
+
+
+## Draw graph
+plot(nvals, seq(0,1, length.out=length(nvals)), xlab="n", ylab="power",
+     main="Power Curve for\nTwo-way Interaction", type="n")
+
+for (i in 1:length(deltas)) {
+  powvals <- sapply(nvals, function (x) powerMediation::powerInteract(nTotal=x,
+                                                                      a=2, b=2, effsize=deltas[i], alpha=0.05, nTests=2))
+  lines(nvals, powvals, lwd=2, col=i, lty=i )
+}
+abline(h=.8, lty = 2)
+legend("bottomright", lwd=2, col=1:length(deltas),lty=1:length(deltas) ,legend=deltas)
+
+## Assuming a predicted effect size of .65 based on the previous study, using .05 alpha (2-tailed) and .80 power, the protocol requires about 100 participants for a total N to prevent type 2 error and to test the efficacy of the intervention. 
+
+#Week 4 personal
+
+##when the raw data are not available
+#F max test: Homogeneity of Variance 
+install.packages("SuppDists")
+
+# 5 groups (n_j=50)
+#sig level:0.05, first number: n_j-1, number of groups: k 
+SuppDists::qmaxFratio(0.95, 49, k=5) #get the F max CV
+
+#Fmax = S^2max/S^2min
+#Fmax > CV, we reject H0
+#Fmax < CV, we retain H0 
+
+# Cochran's C (i.e., C ratio)
+
+# you need the outliers package 
+install.packages("outliers")
+
+#This test is useful to check if largest variance in several groups of data is "outlying" and this group
+#should be rejected
+x=runif(5) # for example we created five variances
+outliers::cochran.test(x,rep(49,5))  
+# the first number is the sample size of a group minus one
+# the second number is the number of groups
+
+# critical values
+outliers::qcochran(0.05,49,5)
+
+#Cochran's C = S^2max/sum of S^2 values 
+#Cochran's C > CV, we reject H0 
+#Cochran's C < CV, we fail to reject H0 
+
+# A. Inferences for Contrasts and Treatment Means -------------------------
+
+# Set up the working directory 
+setwd("~/classdata/LAB")
+
+# Open the data for week4
+Data.w4 <- read.table("Data_week4.txt", header=T)
+summary(Data.w4)
+
+Data.w4$Class <- as.factor(Data.w4$Class) # Make Class variable as factor
+summary(Data.w4)
+str(Data.w4)
+
+#aov: perform the ANOVA analysis
+
+model1 <- aov(Score ~ Class, data=Data.w4) # Fit aov model
+anova(model1) # Display 1-way ANOVA
+
+
+# Individual contrasts: estimates, CIs, tests 
+install.packages("emmeans")
+
+# Load "emmeans":Compute contrasts or linear functions of least-squares means, and comparisons of slopes
+#Least square means are means for groups that are adjusted for means of other factors in the model. 
+
+
+#lsmeans: Obtain least-squares means for many linear, generalized linear, and mixed models. Compute contrasts or linear functions of least-squares means, and comparisons of slopes.
+lsmType <- lsmeans(model1, ~ Class) # Compute and save lsmeans(Least-square means=predicted marginal means)
+lsmType
+
+
+# Display lsmeans and the corresponding 95% CIs for the treatment means 
+confint(lsmType, level=0.95) 
+
+# Comparisons without confidence interval 
+contrast(lsmType, list(C1=c( 1, 1,-1,-1)/2,
+                       C2=c( 1,-1, 1,-1)/2,
+                       C3=c( 1,-1,-1, 1)/2))
+
+
+# Comparsions with confidence interval
+# infer=c(T,T): requests confidence intervals and tests 
+summary(contrast(lsmType, list(C1=c( 1, 1,-1,-1)/2,
+                               C2=c( 1,-1, 1,-1)/2,
+                               C3=c( 1,-1,-1, 1)/2)),
+        infer=c(T,T), level=0.95, side="two-sided")
+
+
+
+# Tukey's method
+# TukeyHSD function can be used only with aov 
+TukeyHSD(model1)
+plot(TukeyHSD(model1))
+
+Tukey.table <- summary(contrast(lsmType, method="pairwise", adjust="tukey"),
+                       infer=c(T,T), level=0.95, side="two-sided")
+# infer=c(T,T): requests confidence intervals and tests
+# side = "two-sided": requests two-sided confidence intervals and tests
+Tukey.table
+
+write.csv(Tukey.table, "1way_Tukey.csv")
+
+# Dunnett's method: all treatment-versus-control comparisons 
+#uses critical values from the multivariate t-distribution, corresponding to adjust="mvt". These critical values are computed by simulation,
+#ref=1: illustrates the first (or any) level is the control.
+summary(contrast(lsmType, method="trt.vs.ctrl", adjust="mvt", ref=1),
+        infer=c(T,T), level=0.95, side="two-sided")
+
+Dunn <- summary(contrast(lsmType, method="trt.vs.ctrl", adjust="mvt", ref=1),
+                infer=c(T,T), level=0.95, side="two-sided")
+# infer=c(T,T): requests confidence intervals and tests
+
+write.csv( Dunn, "1way_Dunn.csv")
+
+
+# Assumption check ----------------------------------------------------
+
+## 1) assumption check with plot 
+
+plot(model1,1) #equal variances across samples 
+
+plot(model1,2) #normality 
+
+
+## 2)-1 homogeneity of variances
+
+# Bartlett Test of Homogeneity of Variances
+##Perform Bartlett's test (H0: the variances in each of the groups (samples) are the same).
+bartlett.test(Score ~ Class, data = Data.w4) 
+#If p-value >.05, we cannot reject the null hypothesis
+#If p-value is less than or equal to 0.05, we reject the null and conclude that at least one variance is different from the others.  
+
+
+## 2)-2 normality 
+# Shapiro-Wilk test of normality:the test rejects the hypothesis of normality when the p-value is less than or equal to 0.05.
+shapiro.test(model1$residuals)
+#p-value > .05, we cannot reject the null and conclude that the data are normal. 
+
+##Simple descriptive statistics 
+
+
+## Calculate number of subjects, mean, and sd for groups(factors)  
+Data.w4 %>% # Data name 
+  group_by(Class) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(Score, na.rm = TRUE), # mean 
+                    sd = sd(Score, na.rm = TRUE) # sd
+  )
+
+#na.rm=TRUE : ignore the NA values 
+
+# C.6 Calculate effect size -----------------------------------------------
+# Run the function for effect size if you did not Run this before. 
+
+ES.d <- function (y.t, sd.t, n.t, y.c, sd.c, n.c)
+{
+  numerator <- (n.t-1)*sd.t^2 + (n.c-1)*sd.c^2
+  s.pooled <-sqrt(numerator/(n.t+n.c-2))
+  (y.t-y.c)/s.pooled
+  
+}
+
+
+d1 <- ES.d(571, 36.9, 4,  860, 60.2, 4) # Class 1 vs Class 2
+d2 <- ES.d(571, 36.9, 4,  433, 45.4, 4) # Class 1 vs Class 3
+d3 <- ES.d(571, 36.9, 4,  496, 49.3, 4) # Class 1 vs Class 4
+d4 <- ES.d(860, 60.2, 4,  433, 45.4, 4) # Class 2 vs Class 3
+d5 <- ES.d(860, 60.2, 4,  496, 49.3, 4) # Class 2 vs Class 4
+d6 <- ES.d(433, 45.4, 4,  496, 49.3, 4) # Class 3 vs Class 4
+
+d1
+d2
+d3
+d4
+d5
+d6
+
+median(c(d1,d2,d3,d4,d5,d6)) 
+
+pwr.t.test(n= , d=2.52, sig.level = .05, power=.8, type="two.sample") #for t-test
+
+pwr.anova.test(k=4 , f= 2.52, sig.level =.05, power=.8) #for one-way ANOVA 
+
+
+## Calculate sample size given information
+v=4; del = 0.25; sig2 = 0.007
+pwr.anova.test(k = v, sig.level = 0.05, power =0.8, f = sqrt(del^2/(2*v*sig2))) 
+
+pwr.anova.test(k = 4, sig.level = 0.05, power =0.8, f = 1.2)
+pwr.anova.test(k = 3, sig.level = 0.05, power =0.9, f = 2.5)
+#k: Number of Groups
+#v:number of levels of the treatment factor
+#n: Number of observation
+#del: the difference to be detected
+#sig2:the assumed largest value of the error variance 
+#f: Effect size
+#sig.level: Significance level (Type I error: prob of rejecting a true H0)
+#Power: Power of test (prob of rejecting a false H0)
+
+#Week 8
+
+setwd("~/classdata/LAB")
+dat.1 <- read.csv("dat_ancova.csv")
+summary(dat.1)
+
+dat.1$treat <- factor(dat.1$treat, 
+                      levels = c(1,2,3), 
+                      labels = c("Group A","Group B","Group C"))
+dat.1
+
+# simple statistics for posttest 
+outcome.stat <- dat.1 %>% 
+  group_by(treat) %>% 
+  summarise(N=n(),
+            MEAN= mean(post, na.rm=TRUE),
+            SD= sd(post, na.rm = TRUE),
+            SE= sd(post, na.rm = TRUE)/n())
+outcome.stat <- data.frame(outcome.stat)
+outcome.stat
+
+# simple descriptive statistics for pretest 
+cov.stat <- dat.1 %>% 
+  group_by(treat) %>% 
+  summarise(N=n(),
+            MEAN= mean(pre, na.rm=TRUE),
+            SD= sd(pre, na.rm = TRUE),
+            SE= sd(pre, na.rm = TRUE)/n())
+cov.stat <- data.frame(cov.stat)
+cov.stat
+
+#rbind: combine two data frames by rows
+prepost.stat <- rbind(cov.stat,outcome.stat )
+prepost.stat
+
+# Graph
+# par: set the parameters 
+# Graphical parameter mfrow: used to specify the number of subplot we need. 
+#a vector of form c(m, n) which divides the given plot into m*n array of subplots.
+par(mfrow=c(1,2))
+boxplot(pre ~ treat, dat.1, main ="pretest", ylim=c(-10,65))
+boxplot(post ~ treat, dat.1, main ="posttest", ylim=c(-10,65))
+
+ggplot(dat.1 , aes(x= pre, y= post, group = treat, color=treat))+
+  geom_smooth(method="lm", se=FALSE )+
+  geom_point()
+
+
+# Fit ANCOVA  -------------------------------------------------------------
+
+#install.packages("HH")
+
+## comparison without covariate 
+mod.an2 <- aov(post ~ treat, data=dat.1) 
+anova(mod.an2)
+
+mod.0 <- lm(post ~ treat , data=dat.1)
+summary(mod.0)
+anova(mod.0)
+unadj.means <- emmeans(mod.0, ~ treat)
+unadj.means
+
+## METHOD 1: ANCOVA: pre as covariate 
+mod.an <- ancova(post ~ pre + treat, data=dat.1) # set ANCOVA model
+mod.an
+ajm <- emmeans(mod.an, ~ treat)
+ajm
+#emmeans: Obtain estimated marginal means for linear models  
+
+#infer=c(T,T) requests confidence intervals and tests.
+summary(contrast(ajm, method="pairwise", adjust="Scheffe"),
+        infer=c(T,T))
+
+summary(contrast(ajm, method="pairwise", adjust="Tukey"),
+        infer=c(T,T))
+
+#Yij = grand mean + treatment effect + BW(pre-mean of pre) + eij
+## METHOD 2 (same results with METHOD1)
+mod.lm <- lm(post ~ I(pre - mean(pre)) + treat, data=dat.1)
+summary(mod.lm)
+table.ancova <- anova(mod.lm)
+table.ancova
+
+adj.means <- emmeans(mod.lm, ~ treat)
+adj.means
+
+#na="": na(not available, missing values) as blank 
+write.csv(table.ancova, "Ancova_table.csv", na="")
+
+#sep: Split one object (queue/stack/deque) into two of the same type.
+write.table(ajm, "adj_means.csv",sep=",", row.names = F)
+
+# Check Model Assumptions  --------------------------------------------------------------
+
+##1)In the ANCOVA the first step is to test whether the covariate has the
+#same slope for each group in the trt factor
+# Equal slope of linearity between trt groups:the linear regression lines for each treatment group have the parallel slopes
+#No relationship between covariate and treatment variable: the covariate is not influenced by the treatment
+ggplot(dat.1 , aes(x= pre, y= post, group = treat, color=treat))+
+  geom_smooth(method="lm", se=FALSE )+
+  geom_point()
+# expect no significance for interaction terms 
+mod.int <- lm(post ~ treat*pre, data = dat.1) 
+summary(mod.int)
+
+mod.an3 <- anova(lm(post ~ pre*treat, data=dat.1)) # check interaction effects
+mod.an3
+
+##2) Linearity between pre (covariate) and post(outcome)
+#ANCOVA assumes a linear relationship between the covariate and the mean response, with the same slope for each treatment
+install.packages("stats")
+
+cor(dat.1$pre, dat.1$post)
+## [1] 0.534633
+ggplot(dat.1 , aes(x= pre, y= post))+
+  geom_smooth(method="lm", se=FALSE )+
+  geom_point()
+
+
+#3)If the independence assumption is satisfied, the residuals should be
+#randomly scattered around zero with no discernible pattern.
+#durbinWatsonTest:The null hypothesis is that the residuals are uncorrelated, and the alternative hypothesis is that the residuals are autocorrelated.
+
+durbinWatsonTest(mod.lm)
+
+
+## ANOVA assumption 
+par(mfrow=c(1,2))
+plot(mod.lm,1) # homogeneity of variance
+plot(mod.lm,2) # normality 
+
+#4)Non-constant Variance of homogeneity
+ncvTest(mod.lm)
+
+#5)Shapiro-Wilk test of normality 
+shapiro.test(mod.lm$residuals)
+
+#Week 7 ANOVA
+
+##Two-way ANOVA from A to Z ################################################ 
+
+##Why do we use two-way ANOVA? To explain more variance in the outcome scores than when we use a single factor and To reduce residual(error) variability. 
+#What was error in the one-way model is now being explained by the second factor (B) and the interaction in the two-way anova model.
+
+#Reshape wide format data into long format data.-------------------- 
+#Use the following statements
+Y <- c(50,30,14,40,25,22)
+B <- rep(c("No","Immed", "Delayed"), 2)
+A <- rep(c("self","computer"), each=3)
+
+complong <- data.frame(Y,B, A) 
+complong
+
+#Usually we test the interaction first and create interaction plots. 
+#Create plots that show the groups means and interaction effects for two-way anova
+
+ggplot(complong, aes(x= B , y= Y, colour= A, group=A)) +
+  geom_line(size=1,aes(linetype=A)) +
+  geom_point(size=2)
+
+## Compute power and power curve ------------------------------------------------------------------------------------------
+# a single estimation
+powerInteract2by2(n=35, tauBetaSigma=.35, alpha=0.05, nTests=1)[1]
+
+nvals <- c(5, 10, 20, 40)
+deltas <- c(0.3, 0.4, 0.5)
+plot(nvals, seq(0,1, length.out=length(nvals)), xlab="n", ylab="power",
+     main="Power Curve for\nTwo-way Interaction", type="n")
+for (i in 1:3) {
+  powvals <- sapply(nvals, 
+                    function (x) powerInteract2by2(n=x,
+                                                   tauBetaSigma=deltas[i], alpha=0.05, nTests=1)[1])
+  lines(nvals, powvals, lwd=2, col=i)
+}
+abline(h=.8, lty = 2)
+legend("bottomright", lwd=2, col=1:3, legend=c("0.3", "0.4", "0.5"))
+
+
+
+## Create data sets---------------------------------------------
+# two factors: treatment groups (ctl/demon/indiv) and duration(long/middle/short) 
+# dv: scores 
+dat1 <- data.frame(dura = c( rep("long", 2), rep("middle",2),
+                             rep("short", 2)),
+                   scores = c(	10,9,10,14, 12, 15),
+                   treat = rep("indiv", 6))
+
+dat2 <- data.frame(dura = c( rep("long", 2), rep("middle",2),
+                             rep("short", 2)),
+                   scores = c(14, 15, 18,	12,	12, 20),
+                   treat = rep("demon", 6))
+
+dat3 <- data.frame(dura = c( rep("long", 2), rep("middle",2),
+                             rep("short", 2)),
+                   scores = c(4, 3, 3, 4, 9, 5),
+                   treat = rep("control", 6))
+dat <- rbind(dat1, dat2, dat3)
+
+#check the first six rows of the data 
+head(dat)
+
+#View the data 
+View(dat)
+summary(dat)
+
+##Run ANOVA--------------------------------
+fit1 <- aov(scores ~ treat + dura + treat:dura, data = dat)
+summary(fit1)
+
+fit2 <- lm(lm(scores ~ treat + dura + treat:dura, data =dat))
+anova(fit2)
+
+### Check the Model Assumptions-----------------------------------------------------
+## Check Assumptions with plots
+#par: set or query graphical parameters
+#mfrow: Given a number of plots n, find an arrangement for showing the plots in an array, set by par(mfrow=mfrow(n))
+par(mfrow=c(1,2)) #create 2x2 plotting area
+plot(fit1,1) #check homogeneity of variance
+plot(fit1,2) #check normality 
+
+## Check Homogeneity of variance #######
+install.packages("car")
+
+leveneTest(scores ~ treat*dura, data = dat) # 
+#if p>.05: we cannot reject the null hypothesis. so homogeneity of variance assumption is met. 
+#if p<.05: we reject the null. 
+
+# Check Normality
+shapiro.test(fit1$residuals)  
+#P>.05: we cannot reject the null, so normality assumption is met. 
+
+##Create interaction plots -----------------------------------
+interaction.plot(dat$dura, dat$treat, dat$scores,
+                 xlab = "dura",
+                 ylab = "scores",
+                 trace.label = "treat")
+#create box plots---------------------------------------------
+
+ggplot2::ggplot(dat, 
+                aes(x=treat, 
+                    y=scores, 
+                    fill =dura)) +
+  geom_boxplot()
+
+
+## Simple Descriptive Statistics------------------------------------------
+
+Stat.A  <- dat %>% # Data name 
+  group_by(treat) %>% # By treatment group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    MEAN = mean(scores, na.rm = TRUE), # mean 
+                    SD = sd(scores, na.rm = TRUE) # sd
+  )
+
+Stat.A <- data.frame(Stat.A)
+Stat.A
+
+#Add standard error 
+Stat.A$SE <- Stat.A$SD/sqrt(Stat.A$count)
+Stat.A
+
+## Create Error Bar Plots for the treatment factor----------------------------------
+ggplot(Stat.A, aes(x= treat , y= MEAN)) + # Set up X and Y axises 
+  geom_errorbar(aes(ymin = MEAN - (1.96*SE), ymax = MEAN + (1.96*SE)), width=0.1)+ # Error Bar Plot 
+  geom_point(size=2)+ # Point for Means
+  xlab("treat") + # Label for X-axis
+  theme_bw() # Make background black and white
+
+
+#Contrasts for one factor----------------------------------------------------------
+
+levels(dat$treat) # check the levels
+
+
+tm <- emmeans(fit1, ~ treat) # estimated means for trt groups
+tm
+
+#orthogonal: independent? 
+#if the sum of the products of weights = 0 
+contrast.table.1  <- contrast(tm, list(C1=c(-1, 1/2, 1/2),
+                                       C2=c( 0, -1, 1)))
+contrast.table.1
+
+#orthogonal or nonorthogonal? 
+contrast.table.2  <- contrast(tm, list(C1=c(-1, 0, 1),
+                                       C2=c(1, 0, -1)))
+contrast.table.2
+
+#posthoc tests------------------------------------------------- 
+#Tukey text
+TukeyHSD(fit1)
+
+pairwise.A <- contrast(tm, method="pairwise", adjust="tukey")
+pairwise.A
+
+#Alternative method for contrast-------------------------------
+
+levels(dat$treat) # check the levels
+
+#tapply: Apply A Function Over A Ragged Array
+tapply(dat$scores, dat$treat, mean)
+
+#glht:General linear hypotheses and multiple comparisons for parametric models
+#infct:a specification of the linear hypotheses to be tested. 
+#Linear functions can be specified by either the matrix of coefficients or by symbolic descriptions of one or more linear hypotheses. 
+#mcp: Multiple comparisons in AN(C)OVA models are specified by objects returned from mcp.
+#mcp:multiple comparisons are defined by matrices or symbolic descriptions specifying contrasts of factor levels where the arguments correspond to factor names.
+p1 <-glht(fit1, linfct = mcp(treat = c("control-((indiv+demon)/2)=0", "indiv - demon = 0")))
+summary(p1)
+
+
+# Testing Simple Effects---------------------------------------------------------
+
+
+#interactionMeans: calculate and plot adjusted means for interactions 
+fit.means <- interactionMeans(fit1)
+fit.means
+plot(fit.means)
+
+# marginal means of factor A 
+interactionMeans(fit1, factors = "treat")
+interactionMeans(fit1, factors = "dura")
+
+#Testing simple main effects: evaluating contrasts across the levels of one factor while the values of the other interaction factors are fixed at certain levels. 
+#Here we test the effect of treatments at the different levels of duration
+#A: treatment; B: duration 
+
+testInteractions(fit1, fixed="treat", across = "dura")
+
+#Here we test the effect of different levels of duration across different treatments 
+
+testInteractions(fit1, fixed ="dura", across = "treat")
+
+#The interaction contrasts: differental effects or differences of differences 
+#This estimates contrasts between control and trt1, control and trt2, trt1 and trt2 across different levels of text difficulty
+testInteractions(fit1, pairwise = "treat", across = "dura")
+
+#Multiple comparisons
+testInteractions(fit1)
+
+#Week 8 personal
+
+setwd("~/classdata/LAB")
+dat.1 <- read.csv("dat_ancova.csv")
+summary(dat.1)
+
+dat.1$treat <- factor(dat.1$treat, 
+                      levels = c(1,2,3), 
+                      labels = c("Group A","Group B","Group C"))
+dat.1
+
+table(dat1$Treatment)
+
+# simple statistics for posttest 
+outcome.stat <- dat.1 %>% 
+  group_by(treat) %>% 
+  summarise(N=n(),
+            MEAN= mean(post, na.rm=TRUE),
+            SD= sd(post, na.rm = TRUE),
+            SE= sd(post, na.rm = TRUE)/n())
+outcome.stat <- data.frame(outcome.stat)
+outcome.stat
+
+# simple descriptive statistics for pretest 
+cov.stat <- dat.1 %>% 
+  group_by(treat) %>% 
+  summarise(N=n(),
+            MEAN= mean(pre, na.rm=TRUE),
+            SD= sd(pre, na.rm = TRUE),
+            SE= sd(pre, na.rm = TRUE)/n())
+cov.stat <- data.frame(cov.stat)
+cov.stat
+
+#rbind: combine two data frames by rows
+prepost.stat <- rbind(cov.stat,outcome.stat )
+prepost.stat
+
+# Graph
+# par: set the parameters 
+# Graphical parameter mfrow: used to specify the number of subplot we need. 
+#a vector of form c(m, n) which divides the given plot into m*n array of subplots.
+par(mfrow=c(1,2))
+boxplot(pre ~ treat, dat.1, main ="pretest", ylim=c(-10,65))
+boxplot(post ~ treat, dat.1, main ="posttest", ylim=c(-10,65))
+
+#the variability post test was reduced by the treatment.
+
+ggplot(dat.1 , aes(x= pre, y= post, group = treat, color=treat))+
+  geom_smooth(method="lm", se=FALSE )+
+  geom_point()
+
+
+# Fit ANCOVA  -------------------------------------------------------------
+
+#install.packages("HH")
+
+## comparison without covariate 
+mod.an2 <- aov(post ~ treat, data=dat.1) 
+anova(mod.an2)
+
+mod.0 <- lm(post ~ treat , data=dat.1)
+summary(mod.0)
+anova(mod.0)
+unadj.means <- emmeans(mod.0, ~ treat)
+unadj.means
+
+## METHOD 1: ANCOVA: pre as covariate 
+mod.an <- ancova(post ~ pre + treat, data=dat.1) # set ANCOVA model
+mod.an
+ajm <- emmeans(mod.an, ~ treat)
+ajm
+#emmeans: Obtain estimated marginal means for linear models  
+
+#infer=c(T,T) requests confidence intervals and tests.
+summary(contrast(ajm, method="pairwise", adjust="Scheffe"),
+        infer=c(T,T))
+
+summary(contrast(ajm, method="pairwise", adjust="Tukey"),
+        infer=c(T,T))
+
+#Yij = grand mean + treatment effect + BW(pre-mean of pre) + eij
+## METHOD 2 (same results with METHOD1)
+mod.lm <- lm(post ~ I(pre - mean(pre)) + treat, data=dat.1)
+summary(mod.lm)
+table.ancova <- anova(mod.lm)
+table.ancova
+
+adj.means <- emmeans(mod.lm, ~ treat)
+adj.means
+
+#na="": na(not available, missing values) as blank 
+write.csv(table.ancova, "Ancova_table.csv", na="")
+
+#sep: Split one object (queue/stack/deque) into two of the same type.
+write.table(ajm, "adj_means.csv",sep=",", row.names = F)
+
+# Check Model Assumptions  --------------------------------------------------------------
+
+##1)In the ANCOVA the first step is to test whether the covariate has the
+#same slope for each group in the trt factor
+# Equal slope of linearity between trt groups:the linear regression lines for each treatment group have the parallel slopes
+#No relationship between covariate and treatment variable: the covariate is not influenced by the treatment
+ggplot(dat.1 , aes(x= pre, y= post, group = treat, color=treat))+
+  geom_smooth(method="lm", se=FALSE )+
+  geom_point()
+# expect no significance for interaction terms 
+mod.int <- lm(post ~ treat*pre, data = dat.1) 
+summary(mod.int)
+
+mod.an3 <- anova(lm(post ~ pre*treat, data=dat.1)) # check interaction effects
+mod.an3
+
+##2) Linearity between pre (covariate) and post(outcome)
+#ANCOVA assumes a linear relationship between the covariate and the mean response, with the same slope for each treatment
+install.packages("stats")
+
+cor(dat.1$pre, dat.1$post)
+## [1] 0.534633
+ggplot(dat.1 , aes(x= pre, y= post))+
+  geom_smooth(method="lm", se=FALSE )+
+  geom_point()
+
+
+#3)If the independence assumption is satisfied, the residuals should be
+#randomly scattered around zero with no discernible pattern.
+#durbinWatsonTest:The null hypothesis is that the residuals are uncorrelated, and the alternative hypothesis is that the residuals are autocorrelated.
+
+durbinWatsonTest(mod.lm)
+
+
+## ANOVA assumption 
+par(mfrow=c(1,2))
+plot(mod.lm,1) # homogeneity of variance
+plot(mod.lm,2) # normality 
+
+#4)Non-constant Variance of homogeneity
+ncvTest(mod.lm)
+
+#5)Shapiro-Wilk test of normality 
+shapiro.test(mod.lm$residuals)
+
+#Week 9 BIBD
+
+#A balanced incomplete block design:a design with v treatment labels, each occurring r times, and
+#with bk experimental units grouped into b blocks of size k < v 
+
+#Incomplete: cannot fit all trts in each block 
+#the blocks do not have enough units to accommodate all the treatments.
+#BIBD satisfies the following conditions
+#(1)Each trt label appears either once or not at all in a block
+#(2)Each pair of labels appears together in lambda blocks, where lambda is a fixed integer. 
+#in BIBD, a treatment occurs in r blocks. There are k-1 other units in each of these blocks, for a total r(k-1) units.
+#the remaining v-1 treatments must be divided equally
+
+
+install.packages("crossdes")
+
+#find.BIB(trt, b, k)
+m <- find.BIB(7,14,3)
+m
+isGYD(m)
+
+#We construct balanced incomplete block designs. 
+install.packages("ibd")
+
+#bibd function checks that the necessary conditions for an existence of a bibd are satisfied. 
+bibd(v = 7, r=3, b = 7, k = 3, lambda = 1)
+
+## - v: number of treatments \nu in our notation
+## - b: number of blocks
+## - r: number of replicates (across all blocks)
+## - k: number of units per block with k < v 
+## - lambda: number of concurrences 
+##lambda = r(k-1)/(v-1) - this should be a whole number 
+#each pair of treatments occurs together in only one block (?? = 1)
+## n total number of units, n= b*k = v*r 
+
+#heading $design: block contents in a b by k matrix
+#N: treatments by blocks incidence matrix of the generated design
+#NNP: concurrence matrix of the generated design
+#$Aeff: the ratio of the average variance of the pairwise comparisons in this incomplete block design relative to the average variance in BIBD with the same values of v and K 
+#$Deff: the volume of the confidence region for all contrasts in the design being examined relative to a BIBD with the same values of v and k. 
+#As the design is BIBD, A-eff and D-eff are 1 approximately.  
+
+#the number of combinations 
+#choose(v,k)
+#we need 7 trts. we have only 2 units per block. how many blocks do we need? 
+choose(7,2)
+#combn(v,k)
+combn(7,2)
+
+#an experiment to investigate the effect of 6 reading interventions. We can have access to 3 classrooms. 
+#How many blocks do we need? 
+#the number of units per block is smaller than the number of treatments, k < v : BIBD 
+combn(6,3)
+#we need 20 schools. 
+
+
+##test of 9 different detergents. There are three basins that are
+# used simultaneously at the same rate with a different detergent in each
+# basin.  Response is number of plates until foam disappears in a basin.  
+# Column 1 is session. Column 2 is treatment (kind of detergen).  Column
+# 3 is response (number of dishes). Treatments 1-4 are detergent base 1
+# with (3, 2, 1, or 0) parts additive.  Treatments 5-8 are detergent base
+# 2 with (3, 2, 1, or 0) parts additive.  Treatment 9 is a control.
+
+#randomize blocks to the groups of trts
+#within each block: randomly assign trts to units 
+
+getwd()
+setwd("~/classdata/LAB")
+dish <- read.csv("dish1.csv")
+head(dish)
+View(dish)
+str(dish)
+dish$Session <- as.factor(dish$Session)
+dish$detergent <- as.factor(dish$detergent)
+str(dish)
+#ANOVA: Type I SS: put the trt at the end 
+fit <- aov(plates ~ Session + detergent, data = dish)
+summary(fit)
+
+#ANOVA: Type III SS: correcting the first factor and remove the causal effect of session 
+drop1(fit, test = "F")
+
+
+#multiple comparisons: Tukey 
+
+C1 <- contrMat(n = table(dish$detergent), type = 'Tukey')
+C1
+plot(fit, 1)
+plot(fit, 2)
+
+##4 recipes, 12 panelists, block size k=2 
+#R combn(4,2)=12 subjects would be required.
+#each panelist tastes only two of the four recipes without losing discriminatory power in a random order and assigns a scale score. 
+install.packages("daewr")
+
+
+data("taste") # load data
+View(taste)
+head(taste)
+
+#anova and drop1 functions generate the Type I (or sequential)
+fit1 <- aov(score ~ panelist + recipe, data = taste)
+summary(fit1)
+
+#type III SS : correcting the first factor 
+drop1(fit1, test = "F")
+
+summary.lm(fit1)
+
+C <- contrMat(n = table(taste$recipe), type = 'Tukey')
+C
+
+#glht: General linear hypotheses and multiple comparisons
+#linfct: linear functions
+contr1 <- glht(fit1, linfct = mcp(recipe = C))
+summary(contr1, test = adjusted('none'))
+
+plot(fit1, 1)
+plot(fit1, 2)
+
+#Exercise Soap
+
+# A Completely Randomized Design for two treatments and three observations on each trtmt, so a total of six observations. 
+# A. Randomization -----------------------------------------------------------------
+
+#Why randomize subjects? 
+#Suppose we want to plan an experiment to examine the effect of two reading interventions, there are two treatments. 
+#We want to randomize two treatments into observation
+
+## Section 3.9, pages 59-60
+
+# Create column trtmt = (1,1,1,2,2,2)
+trtmt <- c(1,1,1,2,2,2)  
+
+#length() function gets or sets the length of a vector (list)
+length(trtmt) # Length of column trtmt:6
+trtmt # View trtmt
+
+# Randomly sampling(selecting) 6 elements from trtmt vector without replacement, meaning it will not select the same item twice##
+sample(trtmt, 6, replace = F) 
+sample(trtmt, length(trtmt), replace = F) # The same code with the previous line
+#replace=TRUE to sample with replacement,which means that one item can appear multiple times in the sample#
+
+
+# Randomly sample from a distribution.Using random numbers, we can randomize subjects. 
+rnorm(100) #rnorm: generate the Normal distribution's random numbers
+
+rnorm(6, mean=50, sd=10 ) # Create column of 6 N(50,10^2) RVs
+
+ranno <- runif(length(trtmt)) # Create the column ranno consisting of 6 uniform random numbers between 0 and 1 
+# runif: generating uniform random numbers between 0 and 1
+# ranno: the randomization procedure
+
+# Create data.frame "design" consisting of trtmt and ranno#
+design <- data.frame(trtmt,ranno)  
+design  # Display the data.frame design
+
+order(ranno)  # Display the order of ranno by sorting from the smallest to the largest. 
+design <- design[order(ranno),]  # Sort the rows from the smallest to the largest based on the values of the RNs (ranno) in the design data 
+design  # Display design with rows sorted, for illustration only
+
+design$EU <- 1:6 # Add col Experimental Units = (1,2,3,4,5,6) to design
+design$EU <- c(1:6)  # Alternative way of adding col EU
+design  # Display the results of the randomization
+
+
+# B.Open data -------------------------------------------------------------
+
+## Set up working directory
+setwd("~/classdata/LAB/")
+
+getwd() # check the current directory 
+
+##Soap Experiment (p.20)
+#1) the Objective of Exp: compare the extent to which three types of soap dissolve in water
+#2) Treatment factors : three levels (regular, deodorant, and moisturizing brands) of soaps 
+#3) Experimental units : identical metal muffin pans filled with 1/4 cup of water heated to 100F
+#4) Randomly assign the cubes of each type of soap to the experimental units 
+
+# collect the data 
+## Read data (Table 3.10, p60)
+soap.data <- read.table("soap_new.txt", header = T) # Read "soap_new.txt" file in R 
+soap.data # View soap.data
+
+## Read "soap_new.txt" file in R with the heading and treating '-99' and 'NA' as missing values 
+soap.data<- read.table("soap_new.txt", header = TRUE, na.strings = c(NA,-99)) 
+#na.strings = c("NA","") and na = c("NA","") tells R to treat both NA and empty strings in columns of character data to missing.
+
+## Check opened data
+soap.data # View soap.data in Console
+View(soap.data) # View soap.data 
+head(soap.data) # Display first 6 observations of soap.data
+tail(soap.data) # Display last 6 observations of soap.data
+
+names(soap.data) # Variable names in soap.data
+str(soap.data)  # Structure of soap.data
+summary(soap.data) # Summarize soap.data 
+
+## Select the parts of the data
+
+soap.data[1,2] # Select the element of 1st row and 2nd column of soap.data
+soap.data[1, ] # Select the 1st row of soap.data
+soap.data[ ,1] # Select the 1st column of soap.data
+
+
+soap.data[c(1,3,4), ] # Select the 1st, 3rd, and 4th rows of soap.data
+soap.data[ ,c(3,4,5)] # Select the 3rd, 4th, and 5th columns of soap.data
+soap.data[ ,3:5] # Select the 3rd, 4th, and 5th columns of soap.data
+soap.data[,1:2]
+View(soap.data[,1:2])
+
+## Add factor variable fSoap to soap.data frame for later ANOVA
+summary(soap.data) # Summarize soap.data 
+soap.data$Soap <- factor(soap.data$Soap) # Convert numeric to factor(categorical variable)
+summary(soap.data) # Summarize soap.data 
+soap.data
+
+# C. Simple descriptive statistics ----------------------------------------
+
+## Install package "dplyr" and load it.
+##dplyr is a grammar of data manipulation, providing a consistent set of verbs that help you solve the most common data manipulation challenges:
+install.packages("dplyr") 
+
+## Calculate number of subjects, mean, and sd for groups(factors)
+## %>% :the object on the left hand side is passed as the first argument to the function on the right hand side.
+soap.data %>% # (percent greater than percent)  #Data name 
+  group_by(Soap) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(WtLoss, na.rm = TRUE), # mean 
+                    sd = sd(WtLoss, na.rm = TRUE) # sd
+  )
+#:: (colon): Access variables in a name space
+# na.rm=TRUE tells R to ignore the NA values and remove observations with missing values 
+
+## Delete rows with missing values 
+complete.cases(soap.data) # Find cases (rows) which do not have any missing values 
+
+soap.data.no.na <- soap.data[complete.cases(soap.data), ] # Store the rows which do not have any missing values: listwise deletion
+
+## Calculate number of subjects, mean, and sd for the rows with no missing values by groups(factors) 
+simple.stat <- soap.data.no.na %>% # Data name 
+  group_by(Soap) %>% # By group  
+  dplyr::summarise( count = n(), # number of subjects 
+                    mean = mean(WtLoss), # mean 
+                    sd = sd(WtLoss) # sd
+  )
+
+
+simple.stat # View simple.stat 
+simple.stat<- data.frame(simple.stat) # Put "simple.stat" into data frame
+row.names(simple.stat) <- c("1-Regular","2-Deodorant","3-Moisturizing") # Add row names 
+simple.stat # View simple.stat 
+
+write.csv(simple.stat,"simple_stat.csv") # Export "simple.stat" with ".csv" file.  
+
+
+# D. Create plots ----------------------------------------------------------
+
+## Plot WtLoss vs Soap 
+plot(WtLoss ~ Soap, data=soap.data.no.na, 
+     ylab = "Weight Loss (grams)",  xlab="Soap")
+#~tilde:used to separate the left- (response v) and right-hand (predictor) sides in a model formula.
+## Plot WtLoss vs Soap specify axis labels, suppress x-axis.
+##xlab(the x-axis label), ylab(the y-axis label)
+plot(WtLoss ~ Soap, data=soap.data.no.na, 
+     ylab = "Weight Loss (grams)",  xlab="Soap", las=1, xaxt = "n")
+#las: y labels are parallel (=0) or perpendicular(=2) to axis. las=1: horizontally oriented. 
+#xaxt="n" and yaxt="n" suppress the x and y axis respectively. 
+
+#create custom axis using the axis( ) function.
+axis(1, at = c(1,2,3), 
+     labels = c("1-Regular","2-Deodorant","3-Moisturizing"))# Insert labels at the tick marks 1 to 3 on the x-axis.
+
+
+install.packages("ggplot2") # build every graph, so it is "Grammar of Graphics" design which tries to integrate a variety of different plotting functions into one coherent package.
+
+## Box plot 
+ggplot(soap.data.no.na, aes(x=Soap, y=WtLoss)) +  # Set up X and Y axes, ggplot2::aes: construct aesthetic mappings
+  geom_boxplot() + #Box plot
+  xlab("Soap Type") + # Label for X-axis
+  ylab("Weight Loss") + # Label for Y-axis
+  scale_x_discrete(labels = c("1-Regular","2-Deodorant","3-Moisturizing")) # Label for discrete value of X-axis
+
+## Error bar plot 
+ggplot(simple.stat, aes(rownames(simple.stat), mean)) + # Set up X and Y axes 
+  geom_errorbar(                             #Error bar plot
+    aes(ymin = mean - (1.96*sd), # Lower bound 
+        ymax = mean + (1.96*sd)), # Upper bound
+    width=0.2)+ # Width of end-line
+  xlab("Soap Type") + # Label for X-axis
+  theme_bw() # Make background black and white
+
+# E. Implement ANOVA ------------------------------------------------------
+
+## Implement one-way ANOVA (Table 3.11, p63) 
+model1 <- aov(WtLoss ~ Soap, data = soap.data.no.na)
+# model1b <- aov(WtLoss ~ as.factor(Soap), data = soap.data.no.na)
+
+summary(model1) #Summary of the analysis
+
+ANOVA.table<-anova(model1) # ANOVA table to save in a file 
+write.csv(ANOVA.table,"ANOVA_results.csv")  #save ANOVA table in ".csv" file 
+
+## Assumption check for one-way ANOVA
+#plot(model1) to see all of the options
+plot(model1,1) #Homogeneity of variance 
+##Homogeneity of variance is an assumption underlying both t tests and F tests (analyses of variance, ANOVAs) in which the population variances (i.e., the distribution, or "spread," of scores around the mean) of two or more samples are considered equal.
+#A residual plot: a plot of the standardized residuals fit against the levels of another variable,
+##the spread of the residuals for treatment 1 seems a little larger than the spread for the other two treatments. This could be interpreted as a sign of unequal variances of the error variables
+
+plot(model1,4) #Q-Q plot :want to know whether the data are normally distributed.
+
+
+# F. Calculate sample size ------------------------------------------------
+
+install.packages("pwr") 
+
+
+## Calculate sample size given information
+pwr.anova.test(k = 3, sig.level = 0.05, power =0.9, f = 1.2) 
+#k: Number of Groups
+#n: Number of observation
+#f: Effect size; pai/sqrt(r)= sqrt(del^2/(2*k*sig2))
+#sig.level: Significance level (Type I error)
+#Power: Power of test
 
