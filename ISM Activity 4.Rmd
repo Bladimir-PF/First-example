@@ -1,0 +1,63 @@
+---
+title: "ISM - Activity 4"
+author: "Geraldo B. Padilla F."
+date: "11/10/2021"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE, eval=FALSE, echo=FALSE}
+pack <- c("tidyverse", "mosaic", "ggformula")
+lapply(pack, require, character.only = TRUE)
+dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
+theme_set(theme_bw(base_size = 18))
+```
+
+#Guiding Question
+
+How much variation is explained in the pumpkin weight (weight_lbs) by the over the top pumpkin measurement (inches)?
+After controlling for pumpkin over the top measurement, is there any differences between United States growers compared to growers from other countries?
+
+Questions
+
+1. Explore the research questions descriptively. What are key messages based on the descriptive analysis?
+
+gf_density(~ weight_lbs, data = dat, size = 5) %>%
+  gf_abs(x = 'Pumpkin weight (lbs)')
+
+
+
+
+gf_density(~ ott, data = dat) %>%
+  gf_labs(x = "Over the top of the pumpkin measurement (inches)")
+
+
+
+
+
+gf_point(room_and_board ~ early_career_pay, data = tuition, size = 4, alpha = .5) %>%
+  gf_smooth(method = 'loess', linetype = 2, color = 'red') %>%
+  gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
+  gf_labs(x = 'Early Career Pay (in $)',
+          y = "Costs of Room and Board (in $)")
+
+
+
+
+2. Fit a linear regression model to explore the first research question. Summarize the key messages/takeaways from the results of this regression model.
+
+3. Fit a second linear regression model to explore the subquestion above. Summarize the key messages/takeaways from the results of this regression model.
+
+4. Fit the third linear regression model that includes an interaction between the two primary attributes of interest from the research questions.
+
+5. Finally, instead of comparing United States vs other countries, try a new series of models equivalent to #3 and #4 that break the United States by their region (ie, use us_region). a. Are all of these models nested? b. Perform the appropriate model comparison to identify the best fitting model.
+
+6. Is the added complexity of splitting the United States into specific regions justified? Why or why not?
+
+
