@@ -11,7 +11,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+ Intro
 ```{r, include=FALSE}
 pack <- c("tidyverse", "mosaic", "ggformula", 'car')
 lapply(pack, require, character.only = TRUE)
@@ -76,6 +76,12 @@ summary(m2)
 
 3. Fit a second linear regression model to explore the subquestion above. Summarize the key messages/takeaways from the results of this regression model.
 
+```{r}
+m4 = lm(weight_lbs ~ ott_mean + us_dummy, data = dat)
+```
+
+
+
 
 
 
@@ -93,10 +99,12 @@ broom::tidy(m3)
 broom::glance(m3)
 ```
 
-
-
-
 4. Fit the third linear regression model that includes an interaction between the two primary attributes of interest from the research questions.
+
+```{r}
+m5 = lm(weight_lbs ~ ott_mean * us_dummy, data = dat)
+```
+
 
 5. Finally, instead of comparing United States vs other countries, try a new series of models equivalent to #3 and #4 that break the United States by their region (ie, use us_region). a. Are all of these models nested? b. Perform the appropriate model comparison to identify the best fitting model.
 
