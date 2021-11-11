@@ -12,7 +12,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, warning=FALSE, eval=FALSE, echo=FALSE}
+```{r, include=FALSE}
 pack <- c("tidyverse", "mosaic", "ggformula", 'car')
 lapply(pack, require, character.only = TRUE)
 dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
@@ -42,56 +42,57 @@ gf_density(~ ott, data = dat) %>%
 gf_point(weight_lbs ~ ott, data = dat, size = 2, alpha = .2) %>%
   gf_smooth(method = 'loess', linetype = 2, color = 'red') %>%
   gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
-  gf_labs(x = 'Pumpkin weight (lbs)',
-          y = "Over the top of the pumpkin measurement (inches)")
+  gf_labs(x = 'Over the top of the pumpkin measurement (inches)',
+          y = "Pumpkin weight (lbs)")
 ```
+
+```{r}
+dat <- dat %>%
+  filter(ott > 0)
+```
+
+```{r}
+gf_point(weight_lbs ~ ott, data = dat, size = 2, alpha = .2) %>%
+  gf_smooth(method = 'loess', linetype = 2, color = 'red') %>%
+  gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
+  gf_labs(x = 'Over the top of the pumpkin measurement (inches)',
+          y = "Pumpkin weight (lbs)")
+```
+
 
 2. Fit a linear regression model to explore the first research question. Summarize the key messages/takeaways from the results of this regression model.
 
 ```{r}
-dat <- dat %>%
-  mutate(ott_mean = ott - mean(ott),
-         ott_quad = ott^2)
-```
-
-```{r}
 m1 = lm(weight_lbs ~ ott, data = dat)
-m2 = lm(weight_lbs ~ ott_mean, data = dat)
-m3 = lm(weight_lbs ~  ott + ott_quad, data = dat)
-m4 = lm(ott ~ ott_quad, data = dat)
 summary(m1)
+```
+
+```{r}
+dat <- dat %>%
+  mutate(ott_mean = ott - mean(ott))
+m2 = lm(weight_lbs ~ ott_mean, data = dat)
+summary(m2)
+```
+
+3. Fit a second linear regression model to explore the subquestion above. Summarize the key messages/takeaways from the results of this regression model.
+
+
+
+
+
+```{r}
+dat <- dat %>%
+  mutate(ott_quad = ott^2)
+m3 = lm(weight_lbs ~ ott + ott_quad, data = dat)
 summary(m3)
-summary(m4)
 ```
-
-```{r}
-vif(m4)
-```
-```{r}
-1 / (1 - 0.9033)
-sqrt(10.34126)
-```
-
 
 
 ```{r}
 broom::tidy(m3)
-broom::glance
-attach(dat)
-cor(ott, ott_quad)
+broom::glance(m3)
 ```
 
-```{r}
-plot(m1, 1)
-plot(m3, 1)
-```
-
-
-df_stats()
-summary(m1)
-summary(m2)
-
-3. Fit a second linear regression model to explore the subquestion above. Summarize the key messages/takeaways from the results of this regression model.
 
 
 
