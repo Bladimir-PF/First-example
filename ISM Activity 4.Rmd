@@ -17,6 +17,7 @@ pack <- c("tidyverse", "mosaic", "ggformula", 'car')
 lapply(pack, require, character.only = TRUE)
 dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
 theme_set(theme_bw(base_size = 18))
+attach(dat)
 ```
 
 #Guiding Question
@@ -75,6 +76,49 @@ summary(m2)
 ```
 
 3. Fit a second linear regression model to explore the subquestion above. Summarize the key messages/takeaways from the results of this regression model.
+After controlling for pumpkin over the top measurement, is there any differences between United States growers compared to growers from other countries?
+
+
+```{r}
+m3 = lm(weight_lbs ~ us_dummy, data = dat)
+summary(m3)
+```
+
+```{r}
+m3 = lm(weight_lbs ~ ott_mean + us_dummy, data = dat)
+summary(m3)
+```
+
+4. Fit the third linear regression model that includes an interaction between the two primary attributes of interest from the research questions.
+
+```{r}
+m4 = lm(weight_lbs ~ ott_mean * us_dummy, data = dat)
+```
+
+5. Finally, instead of comparing United States vs other countries, try a new series of models equivalent to #3 and #4 that break the United States by their region (ie, use us_region).
+a. Are all of these models nested?
+b. Perform the appropriate model comparison to identify the best fitting model.
+
+```{r}
+dat <- dat %>%
+  mutate(midwest = ifelse(us_region == 'midwest', 1, 0),
+         northeast = ifelse(us_region == 'northeast', 1, 0),
+         west = ifelse(us_region == 'west', 1, 0),
+         south = ifelse(us_region == 'south', 1, 0))
+```
+
+```{r}
+df_stats(weight_lbs ~ us_dummy, data = dat, mean, length)
+```
+
+
+
+```{r}
+dat %>% dat
+  group_by(us_dummy) %>%
+  summarise(Mean = mean(weight_lbs))
+```
+
 
 ```{r}
 m4 = lm(weight_lbs ~ ott_mean + us_dummy, data = dat)
@@ -99,14 +143,9 @@ broom::tidy(m3)
 broom::glance(m3)
 ```
 
-4. Fit the third linear regression model that includes an interaction between the two primary attributes of interest from the research questions.
-
-```{r}
-m5 = lm(weight_lbs ~ ott_mean * us_dummy, data = dat)
-```
 
 
-5. Finally, instead of comparing United States vs other countries, try a new series of models equivalent to #3 and #4 that break the United States by their region (ie, use us_region). a. Are all of these models nested? b. Perform the appropriate model comparison to identify the best fitting model.
+
 
 6. Is the added complexity of splitting the United States into specific regions justified? Why or why not?
 
