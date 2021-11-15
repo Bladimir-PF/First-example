@@ -85,14 +85,14 @@ summary(m3)
 ```
 
 ```{r}
-m3 = lm(weight_lbs ~ ott_mean + us_dummy, data = dat)
-summary(m3)
+m4 = lm(weight_lbs ~ ott_mean + us_dummy, data = dat)
+summary(m4)
 ```
 
 4. Fit the third linear regression model that includes an interaction between the two primary attributes of interest from the research questions.
 
 ```{r}
-m4 = lm(weight_lbs ~ ott_mean * us_dummy, data = dat)
+m5 = lm(weight_lbs ~ ott_mean * us_dummy, data = dat)
 ```
 
 5. Finally, instead of comparing United States vs other countries, try a new series of models equivalent to #3 and #4 that break the United States by their region (ie, use us_region).
@@ -108,44 +108,26 @@ dat <- dat %>%
 ```
 
 ```{r}
-df_stats(weight_lbs ~ us_dummy, data = dat, mean, length)
+m6 = lm(weight_lbs ~ ott_mean + midwest, data = dat)
+m7 = lm(weight_lbs ~ ott_mean * midwest, data = dat)
+m8 = lm(weight_lbs ~ ott_mean + northeast, data = dat)
+m9 = lm(weight_lbs ~ ott_mean * northeast, data = dat)
+m10 = lm(weight_lbs ~ ott_mean + west, data = dat)
+m11 = lm(weight_lbs ~ ott_mean * west, data = dat)
+m12 = lm(weight_lbs ~ ott_mean + south, data = dat)
+m13 = lm(weight_lbs ~ ott_mean * south, data = dat)
 ```
 
+anova()
+
+df_stats(weight_lbs ~ us_region, data = dat, mean, length)
 
 
 ```{r}
-dat %>% dat
-  group_by(us_dummy) %>%
-  summarise(Mean = mean(weight_lbs))
+dat %>%
+  group_by(us_region) %>%
+  summarise(N = n(), Mean = mean(weight_lbs, na.rm=TRUE))
 ```
-
-
-```{r}
-m4 = lm(weight_lbs ~ ott_mean + us_dummy, data = dat)
-```
-
-
-
-
-
-
-
-```{r}
-dat <- dat %>%
-  mutate(ott_quad = ott^2)
-m3 = lm(weight_lbs ~ ott + ott_quad, data = dat)
-summary(m3)
-```
-
-
-```{r}
-broom::tidy(m3)
-broom::glance(m3)
-```
-
-
-
-
 
 6. Is the added complexity of splitting the United States into specific regions justified? Why or why not?
 
