@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
  Intro
 ```{r, include=FALSE}
-pack <- c("tidyverse", "mosaic", "ggformula", 'car')
+pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'AICcmodavg')
 lapply(pack, require, character.only = TRUE)
 dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
 theme_set(theme_bw(base_size = 18))
@@ -32,12 +32,20 @@ Questions
 ```{r}
 gf_density(~ weight_lbs, data = dat) %>%
   gf_labs(x = 'Pumpkin weight (lbs)')
+mean(weight_lbs)
+sd(weight_lbs)
 ```
+
+The weight of pumpkins has a skewed distribution to the left (positive skewness). The values are distributed around the mean = 805.26, with a standard deviation = 531.07.
 
 ```{r}
 gf_density(~ ott, data = dat) %>%
   gf_labs(x = "Over the top of the pumpkin measurement (inches)")
+mean(ott)
+sd(ott)
 ```
+
+The over the top of the pumpkin measurement (ott) is useful to estimate the weight of giant pumpkins (is composed of 3 measures: circumference, end to end and side to side). The distribution of this variable, in general terms, looks normal (although it has little dispersion in the tails). The mean of the distribution is 282.64 inches and one standard deviation equals 124.95.
 
 ```{r}
 gf_point(weight_lbs ~ ott, data = dat, size = 2, alpha = .2) %>%
@@ -93,8 +101,8 @@ summary(m4)
 
 ```{r}
 m5 = lm(weight_lbs ~ ott_mean * us_dummy, data = dat)
+summary(m5)
 ```
-
 5. Finally, instead of comparing United States vs other countries, try a new series of models equivalent to #3 and #4 that break the United States by their region (ie, use us_region).
 a. Are all of these models nested?
 b. Perform the appropriate model comparison to identify the best fitting model.
@@ -104,30 +112,36 @@ dat <- dat %>%
   mutate(midwest = ifelse(us_region == 'midwest', 1, 0),
          northeast = ifelse(us_region == 'northeast', 1, 0),
          west = ifelse(us_region == 'west', 1, 0),
-         south = ifelse(us_region == 'south', 1, 0))
+         south = ifelse(us_region == 'south', 1, 0),
+         outside_US = ifelse(us_region == 'other', 1, 0))
 ```
 
 ```{r}
 m6 = lm(weight_lbs ~ ott_mean + midwest, data = dat)
-m7 = lm(weight_lbs ~ ott_mean * midwest, data = dat)
-m8 = lm(weight_lbs ~ ott_mean + northeast, data = dat)
-m9 = lm(weight_lbs ~ ott_mean * northeast, data = dat)
-m10 = lm(weight_lbs ~ ott_mean + west, data = dat)
-m11 = lm(weight_lbs ~ ott_mean * west, data = dat)
-m12 = lm(weight_lbs ~ ott_mean + south, data = dat)
-m13 = lm(weight_lbs ~ ott_mean * south, data = dat)
+m6_int = lm(weight_lbs ~ ott_mean * midwest, data = dat)
+
+m7 = lm(weight_lbs ~ ott_mean + northeast, data = dat)
+m7_int = lm(weight_lbs ~ ott_mean * northeast, data = dat)
+
+m8 = lm(weight_lbs ~ ott_mean + west, data = dat)
+m8_int = lm(weight_lbs ~ ott_mean * west, data = dat)
+
+m9 = lm(weight_lbs ~ ott_mean + south, data = dat)
+m9_int = lm(weight_lbs ~ ott_mean * south, data = dat)
 ```
-
-anova()
-
-df_stats(weight_lbs ~ us_region, data = dat, mean, length)
-
 
 ```{r}
-dat %>%
-  group_by(us_region) %>%
-  summarise(N = n(), Mean = mean(weight_lbs, na.rm=TRUE))
+aictab(list(m6_int, m7_int, m8_int, m9_int), 
+       modnames = c('Midwest', 'Northeast', 'West', 'South'))
 ```
+
+Model selection based on AICc:
+
+          K     AICc Delta_AICc AICcWt Cum.Wt       LL
+Northeast 5 18364.64       0.00      1      1 -9177.30
+Midwest   5 18379.39      14.75      0      1 -9184.68
+West      5 18402.88      38.24      0      1 -9196.42
+South     5 18415.56      50.92      0      1 -9202.76
 
 6. Is the added complexity of splitting the United States into specific regions justified? Why or why not?
 
