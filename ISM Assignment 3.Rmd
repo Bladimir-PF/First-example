@@ -1,0 +1,109 @@
+---
+title: "ISM Assignment 3"
+author: "Geraldo B. Padilla F."
+date: "11/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'broom', 'statthink')
+lapply(pack, require, character.only = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/fertility.csv")
+theme_set(theme_statthinking())
+attach(dat)
+```
+
+## Questions
+
+1. Using the data descriptions above, create a research question to explore for this assignment that includes a categorical predictor. Note, for this first part, include just a single categorical predictor in your research questions.
+
+To begin with, I would be interested in exploring the relationship between the country's gross national income per capita (`gni_class`) and the `fertility rate`, on the assumption that this index varies as a function of available income.
+
+Explicitly, the guiding question would be the following: does the estimated gross national income per capita of the country (`gni_class`) explain the variation of the `fertility rate` among women across in different countries?
+
+Before we begin, an additional comment. The relationship between economic resources and fertility rate can be confusing. Generally speaking, with more money people have access to better services for having and raising children (health, education and housing), so one would expect that women living in countries with high per capita incomes would tend to have more children; however, to earn money people need to work (usually hard), which means having less time available. On the other hand, the highest salaries are available in the most skilled jobs, so people have to specialize and spend time on additional training, all of which translates, again, into less time available for activities such as having and raising children. In short, the guiding question is just the tip of the iceberg.
+
+2. Explore the research question from #1 descriptively. Summarize key similarities/differences from the descriptive analysis.
+
+```{r}
+tab = table(gni_class)
+dat %>%
+  group_by(gni_class) %>%
+  summarise(N = n()) %>%
+  mutate(Perc = round((N / sum(N))*100, digits = 2))
+```
+
+```{r}
+gf_density(~ fertility_rate, data = dat, color = 'black', fill = 'lightblue') %>%
+  gf_boxploth(.5 ~ fertility_rate, data = dat, fill = "orange", width = .04) %>%
+  gf_labs(x = 'Fertility rate')
+```
+
+```{r}
+dat %>%
+  group_by(gni_class) %>%
+  summarise(N = n(), Mean_FR = mean(fertility_rate), sd_FR = sd(fertility_rate), Median_FR = median(fertility_rate), sd = perc(gni_class, data = dat, format = 'percent'))
+```
+
+```{r}
+gf_violin(gni_class ~ fertility_rate, data = dat, fill = 'gray85', draw_quantiles = c(0.1, 0.5, 0.9)) %>%
+  gf_labs(x = "Fertility rate",
+          y = "GNI per capita")
+```
+
+3. Fit a linear regression model to explore the research question from #1. Interpret each regression coefficient estimate from the linear regression model. That is, what do the specific linear regression coefficients mean in the context of the data problem at hand?
+
+```{r}
+m1 = lm(fertility_rate ~ high_gni)
+summary(m1)
+```
+
+```{r}
+names(gni_class)
+```
+career <- career %>%
+  mutate(league_dummy = ifelse(lgID == 'NL', 1, 0))
+
+```{r}
+gni_bin <- gni_class
+x <- c("Low", "Low/Middle", "Upper", "Upper/Middle")
+as.numeric(labels(x, levels = unique(x)))
+```
+
+table(gni_class)
+
+```{r}
+enaho17_m1$dat <- recode(gni_class$dat, "1:2=0; 4:6=2; 7=3; 8=4")
+table(enaho17_m1$region2)
+```
+
+```{r}
+mutate(dat,
+  gni2 = 0 ,
+```
+
+
+```{r}
+dat %>%
+  mutate(LM = )
+```
+
+
+4. Evaluate the linear regression assumptions for the model fitted in #3. Summarize the degree to which the model meets the statistical assumptions of linear regression. 2 pts
+
+5. Summarize the statistical evidence to answer the research question from #1. Be as specific as possible about which tests you are exploring and whether the statistical evidence supports or does not support the null hypothesis.
+
+6. Based on the residual plots explored in #4, is there evidence that key predictors are missing from the model? Why or why not? Note, you can also use the overall model statistics to help justify your answer in this question. a. If you feel there are missing predictors from the model, which predictors from the data would you hypothesize to include next? Why this predictor next?
+
+7. Add any predictors you think may help increase the utility of the statistical model fitted as main effects/additive effects. Note, you are welcome to include more than one attribute in this step, but include at least one. For this assignment, let’s not consider any interactions, make sure the terms are additive. Perform model comparisons to identify the extent to which this second model performs better than the first model fitted in #3.
+
+8. Similar to #5, summarize the statistical evidence to answer the research question from the best fitting model. Be as specific about what the statistical evidence means in the context of the original data and research question from #1. a. If the model in #8 differs from that in #5, did any of the main takeaways change for this new model? Why did this occur?
+
+9. Attempt to create a figure that captures/summarizes the key takeaway from the statistical results/conclusions from #8. Why did you choose this figure to highlight the statistical results/conclusions? That is, what makes the figure you chose effective in showing the statistical results?
