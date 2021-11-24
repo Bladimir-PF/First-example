@@ -1,0 +1,175 @@
+---
+title: "Pieces of code"
+author: "Geraldo B. Padilla F."
+date: "11/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r}
+round(3.835794, digits=2)
+round(3.835794-1.026245, digits = 2)
+round(3.835794-1.494944, digits = 2)
+round(3.835794-1.533106, digits = 2)
+```
+
+
+```{r}
+lsmeans(m2, ~ gni_class)
+emmeans(m2, ~ gni_class)
+```
+
+
+
+
+
+
+```{r}
+pairwise.t.test(dat$fertility_rate, dat$gni_class, p.adjust = 'none')$p.value
+```
+
+
+
+```{r}
+lm <- lm(fertility_rate ~ gni_class)
+broom::tidy(lm)
+```
+
+```{r}
+lm1 <- lm(fertility_rate ~ 1 + gni_class)
+broom::tidy(lm1)
+```
+
+```{r}
+dat = dat %>%
+  mutate(gni_Low_Middle = ifelse(gni_class == 'Low/Middle', 1, 0),
+         gni_Upper_Middle = ifelse(gni_class == 'Upper/Middle', 1, 0),
+         gni_Upper = ifelse(gni_class == 'Upper', 1, 0))
+```
+
+```{r}
+m3 = lm(fertility_rate ~ gni_Low_Middle + gni_Upper_Middle + gni_Upper, data = dat)
+summary(m1)
+summary(m3)
+```
+
+```{r}
+dat <- dat %>%
+  mutate(outfield = ifelse(position == 'outfield', 1, 0),
+         infield = ifelse(position == 'infield', 1, 0),
+         catcher = ifelse(position == 'catcher', 1, 0))
+```
+
+
+
+table(gni_class)
+
+
+
+
+
+
+
+```{r}
+dat2 %>%
+  group_by(gni_dummy) %>%
+  summarise(Mean = mean(fertility_rate))
+
+```
+22
+
+```{r}
+dat$gni2 = factor(dat$gni_class)
+dat$gni2 = fct_recode(dat$gni2,
+                       '1' = 'Low',
+                       '2' = 'Low/Middle',
+                       '3' = 'Upper/Middle',
+                       '4' = 'Upper')
+```
+
+```{r}
+dat$gni3 = factor(dat$gni_class)
+```
+
+
+```{r}
+dat$d=as.numeric(dat$gni3)
+str(dat)
+```
+
+
+
+str(dat)
+
+
+table(gni2)
+
+```{r}
+(lm(fertility_rate ~ gni2))
+```
+
+table(high_gni)
+
+
+str(dat)
+
+dat$gni3 = as.numeric(factor(dat$gni2))
+
+
+
+dat$d <- NULL
+
+```{r}
+dat  = dat %>%
+  mutate(gni_dummy = ifelse(gni2==1, 1, 0))
+table(dat$gni_dummy)
+```
+
+```{r}
+dat <- dat %>%
+  mutate(midwest = ifelse(us_region == 'midwest', 1, 0),
+         northeast = ifelse(us_region == 'northeast', 1, 0),
+         west = ifelse(us_region == 'west', 1, 0),
+         south = ifelse(us_region == 'south', 1, 0),
+         outside_US = ifelse(us_region == 'other', 1, 0))
+
+career <- career %>%
+  mutate(league_dummy = ifelse(lgID == 'NL', 1, 0))
+```
+
+
+
+
+career <- career %>%
+  mutate(league_dummy = ifelse(lgID == 'NL', 1, 0))
+
+```{r}
+gni_bin <- gni_class
+x <- c("Low", "Low/Middle", "Upper", "Upper/Middle")
+as.numeric(labels(x, levels = unique(x)))
+```
+
+table(gni_class)
+
+```{r}
+enaho17_m1$dat <- recode(gni_class$dat, "1:2=0; 4:6=2; 7=3; 8=4")
+table(enaho17_m1$region2)
+```
+
+```{r}
+mutate(dat,
+  gni2 = 0 ,
+```
+
+
+```{r}
+dat %>%
+  mutate(LM = )
+```
+
