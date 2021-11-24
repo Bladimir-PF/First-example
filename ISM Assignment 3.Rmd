@@ -14,6 +14,16 @@ pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'broom', 'statthink')
 lapply(pack, require, character.only = TRUE)
 ```
 
+```{r}
+loadlibs <- function(){
+  library('mosaic')
+  library('car')
+  print ('libraries loaded')
+}
+loadlibs()
+```
+
+
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/fertility.csv")
 theme_set(theme_statthinking())
@@ -60,14 +70,55 @@ gf_violin(gni_class ~ fertility_rate, data = dat, fill = 'gray85', draw_quantile
 
 3. Fit a linear regression model to explore the research question from #1. Interpret each regression coefficient estimate from the linear regression model. That is, what do the specific linear regression coefficients mean in the context of the data problem at hand?
 
+
+
 ```{r}
 m1 = lm(fertility_rate ~ high_gni)
 summary(m1)
 ```
 
 ```{r}
-names(gni_class)
+dat2 %>%
+  group_by(gni_dummy) %>%
+  summarise(Mean = mean(fertility_rate))
+
 ```
+
+
+```{r}
+dat2 = dat
+dat2$gni2 = factor(dat2$gni_class)
+dat2$gni2 = fct_recode(dat2$gni2,
+                       '1' = 'Low',
+                       '2' = 'Low/Middle',
+                       '3' = 'Upper/Middle',
+                       '4' = 'Upper')
+gni3 = as.numeric(as.factor(dat2$gni2))
+```
+
+table(high_gni)
+
+```{r}
+dat2  = dat2 %>%
+  mutate(gni_dummy = ifelse(gni3 > 2, 1, 0))
+table(dat2$gni_dummy)
+```
+
+```{r}
+dat <- dat %>%
+  mutate(midwest = ifelse(us_region == 'midwest', 1, 0),
+         northeast = ifelse(us_region == 'northeast', 1, 0),
+         west = ifelse(us_region == 'west', 1, 0),
+         south = ifelse(us_region == 'south', 1, 0),
+         outside_US = ifelse(us_region == 'other', 1, 0))
+
+career <- career %>%
+  mutate(league_dummy = ifelse(lgID == 'NL', 1, 0))
+```
+
+
+
+
 career <- career %>%
   mutate(league_dummy = ifelse(lgID == 'NL', 1, 0))
 
