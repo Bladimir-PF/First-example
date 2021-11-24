@@ -1,0 +1,18 @@
+---
+title: "ISM Assignment 4"
+author: "Geraldo B. Padilla F."
+date: "11/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'AICcmodavg', 'broom')
+lapply(pack, require, character.only = TRUE)
+dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
+theme_set(theme_statthinking())
+attach(dat)
+```
