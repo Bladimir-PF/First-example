@@ -2,7 +2,9 @@
 title: "ISM Assignment 3"
 author: "Geraldo B. Padilla F."
 date: "11/19/2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -32,38 +34,70 @@ Before we begin, an additional comment. The relationship between economic resour
 
 2. Explore the research question from #1 descriptively. Summarize key similarities/differences from the descriptive analysis.
 
+To begin with, the dependent variable fertility rate (TF) shows an asymmetric distribution to the right (Figure 1), with minimum and maximum values between 1.24 and 7.03 respectively, and a large deviation of the values at the lower right. This positive asymmetry is also reflected in the mean and median positions, with values of 2.70 and 2.20 respectively. In addition, the upper bar chart in Figure 1 reports the distribution of the fertility rate in the first and third quartiles, where 50% of the data fall between 1.66 and 3.08.
+
+Figure 1. Density plot of Fertility rate
+```{r}
+gf_density(~ fertility_rate, data = dat, color = 'black', fill = 'lightblue') %>%
+  gf_boxploth(.5 ~ fertility_rate, data = dat, fill = "orange", width = .035) %>%
+  gf_labs(x = 'Fertility rate')
+```
+
+
+
+Table 1. Frequencies of GNI (absolute and relatives)
 ```{r}
 dat %>%
   group_by(gni_class) %>%
   summarise(N = n()) %>%
   mutate(Perc = round((N / sum(N))*100, digits = 2))
 ```
+The variable `gni_class` is composed of 4 categories (Table 1). The distribution of absolute frequencies is uneven, with groups between 22 (Low) and 40 countries (Upper/Middle).
 
-```{r}
-gf_density(~ fertility_rate, data = dat, color = 'black', fill = 'lightblue') %>%
-  gf_boxploth(.5 ~ fertility_rate, data = dat, fill = "orange", width = .04) %>%
-  gf_labs(x = 'Fertility rate')
-```
+Regarding the relationship between fertility rate and GNI in the sample countries, the means and standard deviations vary considerably. Fertility rate means decrease as per capita economic resources (ordinal categories) increase.
 
+
+Table 2. Descriptive statistics of fertility rate by GNI groups
 ```{r}
 dat %>%
   group_by(gni_class) %>%
-  summarise(Mean_FR = mean(fertility_rate), Median_FR = median(fertility_rate), sd_FR = sd(fertility_rate))
+  summarise(Mean_FR = mean(fertility_rate), sd_FR = sd(fertility_rate), Min_FR = min(fertility_rate), Max_FR = max(fertility_rate))
 ```
 
+This difference in means is corroborated by analysis of variance (ANOVA). The between-group variation (GNI) is larger than the between-unit variation (Table 3), which produces a large F value (80.98) and allows us to reject the null hypothesis for this sample (with a p-value <2e-16).
+
+Table 3
 ```{r}
-gf_violin(gni_class ~ fertility_rate, data = dat, fill = 'gray85', draw_quantiles = c(0.1, 0.5, 0.9)) %>%
+fit_aov <- aov(fertility_rate ~ as.factor(gni_class), data = dat)
+summary(fit_aov)
+```
+
+Visually, the differences between groups (GNI), both in medians and dispersion (quartiles), can be seen in Figure 2.
+
+Figure 2. Fertility rate according to GNI groups
+```{r}
+gf_violin(gni_class ~ fertility_rate, data = dat, fill = 'lightblue', draw_quantiles = c(0.1, 0.5, 0.9)) %>%
   gf_labs(x = "Fertility rate",
           y = "GNI per capita")
 ```
 
+The Low group has the highest median fertility rate, and its deviation of values is similar to that shown by the Low/Middle group. On the other hand, the Upper/Middle and Upper groups have lower medians and deviation, especially the highest income category (Upper).
+
 3. Fit a linear regression model to explore the research question from #1. Interpret each regression coefficient estimate from the linear regression model. That is, what do the specific linear regression coefficients mean in the context of the data problem at hand?
 
+The linear regression model (Table 4) has as dependent variable the fertility rate of the countries and as predictor variable the income per capita (gni_class). Because the independent variable is categorical (4 levels), the parameters estimated by the regression model are interpreted slightly differently from the coefficients of a conventional linear regression model (quantitative variables).
 
+Table 4. Linear Regression Model with dummy variables
 ```{r}
 m1 = lm(fertility_rate ~ gni_class)
 summary(m1)
 ```
+
+In this case, the intercept (B0) represents the mean of the dependent variable (fertility rate) for the reference group (gni_low), while the other coefficients of the model (B1, B2 and B3) express the difference in means between the reference category and the other categories of the variable. On the other hand, as the gni_class variable is a string variable, the software relies on the alphabetical order of the categories to construct the dummy variables (k-1 = 3), a fact that in our example does not cause problems, since despite being an ordinal variable, each category is individually contrasted with the reference level.
+
+First, the R-squared is .669, which means that the gni_class variable helps explain approximately 67% of the variability in fertility rates across countries. On the other hand, the RSE of the model is .807, which means that, on average, the observed values deviate by .807 units from the values predicted by the model.  The coefficient of variation of the model is .807/2.7 = .289, which can be interpreted as the percentage error being approximately 29%. Based on these data, we can assume that the model fits the data acceptably.
+
+On the estimated coefficients (B1, B2 and B3), the differences between the means of each group with the reference category are significant (p-values below .01). As the categories are represented by dummy variables, the model resembles a multiple regression model (as many independent variables as categories of the independent variable). That is, the slopes are independent and only consider the variation between the reference and comparison categories. Thus, the variation of one point in the Low/Middle category (i.e., when the group changes from Low to Low/Middle) is equivalent to a decrease of 1.89 units in the average fertility rate of the countries (which is equivalent to 3.01, the observed mean of this group). This is equivalent to saying 'keeping the other attributes constant'. The interpretation of B2 and B3 is similar.
 
 4. Evaluate the linear regression assumptions for the model fitted in #3. Summarize the degree to which the model meets the statistical assumptions of linear regression. 2 pts
 
@@ -71,53 +105,66 @@ summary(m1)
 resid_m1 <- augment(m1)
 ```
 
+Regarding the linearity of the regression model (Figure 3), we can assume that it is broadly complied with. Between the predicted values and the residuals of the third category we observe some drawbacks for the fit of the model, however, this does not seem to be a major problem.
+
+Figure 3. Linearity
+```{r}
 plot(m1, 1)
+```
 
+The normal distribution of the residuals seems to be a major problem (Figure 4). Although the distribution of residuals appears normal between -1 and 1 quantile, the deviation of the extremes is high. On the other hand, the number of observations (n = 124) is not very high, so options to improve this aspect of the model should be explored.
+
+Figure 4
+```{r}
 plot(m1, 2)
+```
 
+This abnormality in the distribution of residuals can be seen in the following figure (5). The mean is close to 0, however, the data are very close to the mean and quickly deviate to the extremes.
+
+Figure 5
 ```{r}
 gf_density(~ .resid, data = resid_m1) %>%
   gf_labs(x = "Residuals")
 ```
 
-plot(m1, 3)
+The homogeneity of variance seems acceptable (Figure 6), although again the third category exhibits problems of fit between the predicted values and the standardized residuals. This misalignment does not significantly affect the model, since, as we saw, the standard errors were small and the hypothesis tests (p-values) were significant at a 1% significance level.
 
+Figure 6
 ```{r}
-gf_point(.std.resid ~ .fitted, data = resid_m1, size = 5, alpha = .15) %>%
-  gf_smooth(method = 'loess', size = 1) %>%
-  gf_labs(x = 'Fitted Values',
-          y = 'Standardized Residuals')
+plot(m1, 3)
 ```
+
+Despite this judgment, when considering the results of formal tests on homogeneity of variance, both the Bartlett test and the Levene's test suggest accepting the alternative hypothesis (heteroscedasticity between groups) at the 1% significance level.
 
 ```{r}
 bartlett.test(fertility_rate ~ as.factor(gni_class), data = dat)
 car::leveneTest(fertility_rate ~ as.factor(gni_class), data = dat)
 ```
 
+Finally, Cook's distance shows that there are 3 values to explore (80, 83 and 123). If this were a real investigation, the next step would be to review these values and decide whether they represent possible events or are a tabulation error. Then, one could analyze the effect of removing these values, comparing models with and without them. However, in general and given that there are no values greater than 1 (rule of thumb), we can assume that there are no problems with influential values.
+
+Figure 7. Leverage points
 ```{r}
 plot(m1, 4)
 ```
 
-```{r}
-dat$student_residuals <- rstudent(m1)
-```
-
-```{r}
-dat %>%
-  mutate(obs_num = 1:n()) %>%
-  gf_point(student_residuals ~ obs_num, size = 5, alpha = .15) %>%
-  gf_hline(yintercept = ~ 3, color = 'blue', size = .5) %>%
-  gf_labs(x = "Observation Number",
-          y = "Studentized Residuals")
-```
+In summary, we could say that the model adequately meets the assumptions of linearity, normal distribution of residuals, homoscedasticity and influential values, although options could be explored to improve homoscedasticity and the presence of outliers (80, 83 and 123).
 
 5. Summarize the statistical evidence to answer the research question from #1. Be as specific as possible about which tests you are exploring and whether the statistical evidence supports or does not support the null hypothesis.
 
-6. Based on the residual plots explored in #4, is there evidence that key predictors are missing from the model? Why or why not? Note, you can also use the overall model statistics to help justify your answer in this question. a. If you feel there are missing predictors from the model, which predictors from the data would you hypothesize to include next? Why this predictor next?
+So far, statistical evidence allows us to establish that the level of per capita income (gni_class) helps to explain the variability of fertility rates among countries, especially if we consider the accuracy of the regression model (R-squared and RSE). Although this analysis is not interested in predicting values, the standard errors of each estimated parameter (B1, B2 and B3) were still significant at the 1% significance level, which provides evidence in favor of the alternative hypothesis of each (the difference between the means of the categories is not equal to 0 in the population; in other words, there are significant relationships between the dependent variable and the different categories of the independent variable).
 
-educ_female contraceptive
+6. Based on the residual plots explored in #4, is there evidence that key predictors are missing from the model? Why or why not? Note, you can also use the overall model statistics to help justify your answer in this question.
+a. If you feel there are missing predictors from the model, which predictors from the data would you hypothesize to include next? Why this predictor next?
+
+Based on the residual plots, it is difficult to establish the lack of any variable in the model since patterns in the distribution cannot be easily identified (most common sign that something strange is going on in the relationship between predictor and predicted variable).
+However, based on the remaining explained variability (33% or 34% if one considers the adjusted R-squared, which is not very different from the normal R-squared since the predictor variables were not many), one could add other variables from the database to improve the accuracy and usefulness of the model.
+
+In particular, the variables measuring the education (`educ_female`) and `contraceptive` use of women (or their partners in the case of the second variable) could be interesting to analyze. As I said before, one of my research assumptions is that the fertility rate is affected by different factors, one of them being per capita income, in addition to education and preventive sexual measures. Both variables are expected to be negatively related to the fertility rate. In other words, the assumption of this modification to the model is that as women in countries have more years of education and use contraceptive methods, the fertility rate decreases.
 
 7. Add any predictors you think may help increase the utility of the statistical model fitted as main effects/additive effects. Note, you are welcome to include more than one attribute in this step, but include at least one. For this assignment, let’s not consider any interactions, make sure the terms are additive. Perform model comparisons to identify the extent to which this second model performs better than the first model fitted in #3.
+
+To facilitate the interpretation of the estimated model parameters, I will use independent variables centered on the mean.
 
 ```{r}
 dat = dat %>%
@@ -125,6 +172,7 @@ dat = dat %>%
          contraceptv_mc = contraceptive - mean(contraceptive))
 ```
 
+Table 
 ```{r}
 m2 = lm(fertility_rate ~ educ_fem_mc + contraceptv_mc + gni_class, data = dat)
 summary(m2)
@@ -138,13 +186,11 @@ anova(m1, m2)
 
 9. Attempt to create a figure that captures/summarizes the key takeaway from the statistical results/conclusions from #8. Why did you choose this figure to highlight the statistical results/conclusions? That is, what makes the figure you chose effective in showing the statistical results?
 
-```{r}
+```{r, eval=FALSE}
 ggplot(data = cbind(dat, m2),
        aes(pre, post, color=treat)) + geom_point() +
   facet_grid(. ~ treat) + geom_line(aes(y=pred))
 ```
-
-
 
 ```{r}
 gf_point(fertility_rate ~ educ_fem_mc, data = dat, color = ~high_gni, size = 4) %>%
