@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
-pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'broom', 'statthink')
+pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'broom', 'statthink', 'emmeans')
 lapply(pack, require, character.only = TRUE)
 ```
 
@@ -136,6 +136,7 @@ plot(m1, 3)
 
 Despite this judgment, when considering the results of formal tests on homogeneity of variance, both the Bartlett test and the Levene's test suggest accepting the alternative hypothesis (heteroscedasticity between groups) at the 1% significance level.
 
+Table 5.
 ```{r}
 bartlett.test(fertility_rate ~ as.factor(gni_class), data = dat)
 car::leveneTest(fertility_rate ~ as.factor(gni_class), data = dat)
@@ -172,29 +173,55 @@ dat = dat %>%
          contraceptv_mc = contraceptive - mean(contraceptive))
 ```
 
-Table 
+By performing an ANOVA test for both models, we can see that by introducing years of education (`educ_fem_mc`) and contraceptive (`contraceptv_mc`) use among women (both centered around the mean) our estimate of the fertility rate across countries improves (F = 15.774 and p-value = 8.494e-07).
+
+Table 6. 
 ```{r}
 m2 = lm(fertility_rate ~ educ_fem_mc + contraceptv_mc + gni_class, data = dat)
-summary(m2)
-```
-
-```{r}
 anova(m1, m2)
 ```
 
+Due to the use of mean-centered predictors, the interpretation of the coefficients is fairly straightforward. Indeed, the interpretation of the intercept (B0) is the same as before: the average fertility rate among countries classified as Low per capita income is 3.83, when all other predictors are zero.
+In turn, the estimated parameters B1 and B2 represent the variation that one unit of years of education or percentage of contraceptive use has on the fertility rate holding all other predictors constant (among them and with respect to GNI categories). In this case, independent of the reference category, the effects of B1 and B2 on the fertility rate are negative and significant at the 1% significance level; especially the variable years of education (`educ_fem_mc`), where for one unit of variation from the mean (increase), the fertility rate decreases, on average, by .124 units (holding all other attributes constant [both contraceptive use and the respective GNI category]).
+
+Table 7.
+```{r}
+summary(m2)
+```
+
+The coefficients for the GNI categories are interpreted similarly to the previous model: they still represent the difference in means with respect to the reference category (Low), although now the phrase "holding all other predictors constant" or "for given values of education and contraceptive use centered on the mean" should be added.
+
 8. Similar to #5, summarize the statistical evidence to answer the research question from the best fitting model. Be as specific about what the statistical evidence means in the context of the original data and research question from #1. a. If the model in #8 differs from that in #5, did any of the main takeaways change for this new model? Why did this occur?
+
+Table 8. 
+```{r}
+gl_m1 = glance(m1)
+(glm1 = select(gl_m1, r.squared:p.value))
+```
+
+
+Table 9. 
+```{r}
+gl_m2 = glance(m2)
+(glm2 = select(gl_m2, r.squared:p.value))
+```
+
+To support my answer to this question, I will focus mainly on the changes in the model's adjusted R-squared and RSE, expressions of the estimation accuracy.
+After adding the variables of years of education and contraceptive use, both centered on the mean, the adjusted r-squared (I will use this one because of the number of variables added, although there is not much difference with respect to the coefficient of multiple determination) rose from .661 to .728, which is equivalent to saying that the inclusion both variables help explain approximately 19.8% more of the variation in the fertility rate across countries than the previous model ([.339 - .272] / .339 = .198).
+On the other hand, the RSE of the model decreased from .807 to .723, which means that the average distance between the observed and predicted values is smaller.
+In the context of this exercise, this evidence means that the fertility rate between countries is closely linked to the economic, educational and health status of the inhabitants. One could argue that women with more education and access to contraceptive methods tend to have fewer children than women living in countries where these indicators are lower. Also, economic resources per capita remain a significant characteristic in trying to explain the behavior of fertility rates even after controlling for education and contraceptive use among women. 
+In general terms, both models provide similar evidence. In the second model, the coefficients of GNI decreased somewhat as the variables introduced captured some of the variation in fertility rates, however, they continued to express a decline in fertility rates compared to the Low gni category.
 
 9. Attempt to create a figure that captures/summarizes the key takeaway from the statistical results/conclusions from #8. Why did you choose this figure to highlight the statistical results/conclusions? That is, what makes the figure you chose effective in showing the statistical results?
 
-```{r, eval=FALSE}
-ggplot(data = cbind(dat, m2),
-       aes(pre, post, color=treat)) + geom_point() +
-  facet_grid(. ~ treat) + geom_line(aes(y=pred))
-```
+Since the relationships in a multiple regression model are more like a plane than a straight line, it is difficult to choose a graphical representation that accurately expresses the results of the model (m2).
+For this reason, I have chosen a correlation plot which, although it expresses rather interaction, demonstrates one of the main ideas I wanted to explore in this exercise. The graph shows the differences between the different GNI levels in the relationship between female education and fertility rates.
 
+Figure 8.
 ```{r}
-gf_point(fertility_rate ~ educ_fem_mc, data = dat, color = ~high_gni, size = 4) %>%
+gf_point(fertility_rate ~ educ_fem_mc, data = dat, color = ~gni_class, size = 4) %>%
   gf_smooth(method = 'lm', size = 1)
 ```
 
-
+In the graph we can see how, in general, fertility rates between countries decrease when women have more years of education, especially if we compare between those countries with low per capita income and those with the highest per capita income.
+This visualization quickly provides a clear idea: the decision to have children (fertility rate) is not only a fact linked to the age or cycle of women, but also depends on the economic and educational conditions of the countries. As expected, having children is not only a biological issue, but also a matter of social factors.
