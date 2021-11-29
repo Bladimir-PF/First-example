@@ -9,10 +9,108 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'AICcmodavg', 'broom')
+```{r, echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+pack <- c("tidyverse", "mosaic", "ggformula", 'car', 'broom', 'statthink', 'emmeans')
 lapply(pack, require, character.only = TRUE)
-dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
-theme_set(theme_statthinking())
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/fertility.csv")
 attach(dat)
 ```
+
+## Questions
+
+1. Briefly summarize the two competing models fitted in assignment 3. Which one showed the evidence of fitting the best?
+
+In summary, the dependent variable was the fertility rate among women from different countries. The first model (m1) has only one predictor variable: gni_class (4 categories of Low, Low/Middle, Middle/Upper and Upper), while the second includes years of education and contraceptive use among women (or their sexual partners), both centered on the mean. The decision to center these predictors is based on the interpretation of the parameters among the different GNI groups.
+
+```{r}
+dat = dat %>%
+  mutate(educ_fem_mc = educ_female - mean(educ_female),
+         contraceptv_mc = contraceptive - mean(contraceptive))
+```
+
+Table 1. Simple Linear Regression to Fertility rate across countries (m1)
+```{r}
+m1 = lm(fertility_rate ~ gni_class)
+summary(m1)
+```
+
+Table 2. Multiple Linear Regression to Fertility rate across countries (m2)
+```{r}
+m2 = lm(fertility_rate ~ educ_fem_mc + contraceptv_mc + gni_class, data = dat)
+summary(m2)
+```
+
+The second model (`fertility_rate ~ educ_fem_mc + contraceptv_mc + gni_class, data = dat`) showed better fit indicators (RSE and adjusted R-squared) to data than the first model. The two quantitative variables and the gni categories were significant at the 1% significance level and had negative signs, meaning that all else equal these attributes decrease the fertility rate across countries. The largest difference in the gni categories, when education and contraceptive use among women are centered on the mean, is between the Low and Middle/Upper categories (-1.494944). In other words, a one-unit change in gni from Low to Middle/Upper decreases the countries' average fertility rate by 1.53, holding all the other attributes constant.
+
+2. Explore an interaction between two categorical attributes. Interpret the interaction estimate. That is, what does the parameter estimate mean in the context of the data? Note: I recommend including at most a two-way interaction effect (ie, an interaction between two attributes) to promote interpretability here.
+
+To facilitate the interpretation of the model (m3), I will use the variable high_gni, a reduced version of gni_class. On the other hand, the variable average years of education of women (educ_female) will be divided into two categories: 6 or less years and 7 years or more. This new binary variable (educ_fem_cat) was constructed according to the average years of primary (at least 6 years) and secondary education.
+
+```{r}
+dat = dat%>%
+  mutate(educ_fem_cat = ifelse(educ_female > 6.9, 1, 0))
+```
+
+The coding of the variables is:
+high_gni = 0 (low or low/middle income),
+high_gni = 1 (high/medium or high income),
+educ_fem_cat = 0 (6 or less years of education),
+educ_fem_cat = 1 (7 or more years of education).
+
+The interpretation of the coefficients of the model with interaction (m3) is slightly different from the model that only includes main effects. In this model, the B0 intercept represents the average fertility rate of those countries with Low and Middle/Low income and where women have on average 6 years of education or less. In this interpretation we could add the phrase "when all other predictors equal zero" or "holding all other attributes constant", but since only binary qualitative variables have been included, I think it is not necessary.
+
+Table 3. Multiple linear Regression to Fertility rate across countries with multiplicative interaction
+```{r}
+m3 = lm(fertility_rate ~ high_gni*educ_fem_cat, data = dat)
+summary(m3)
+```
+
+The estimated parameter B1 can be interpreted as the average change in the fertility rate when the reference level of GNI income is changed and the average education of women in the 6 years or less category is maintained. In other words, for one unit of change in the high_gni variable (moving from a low or middle/low income country to a medium/high or high income country), the average fertility rate of the countries decreases by -1.4915 units, keeping the category of average years of education of women constant (one could also say "when the other predictors equal zero").
+
+
+```{r}
+dat$educ_fem_cat = as.factor(dat$educ_fem_cat)
+dat$educ_fem_cat = fct_recode(dat$educ_fem_cat,
+                       '6 or less years of education' = '0',
+                       '7 or more years of education' = '1')
+dat$high_gni = as.factor(dat$high_gni)
+dat$high_gni = fct_recode(dat$high_gni,
+                       'Low or Low/middle' = '0',
+                       'Upper/middle or Upper' = '1')
+```
+
+
+```{r}
+(two_way = broom::augment(m3) %>%
+   distinct(high_gni, educ_fem_cat, .fitted))
+```
+
+```{r}
+(mean_duration <- df_stats(fertility_rate ~ high_gni + educ_fem_cat, data = dat, mean))
+```
+
+```{r}
+gf_point(.fitted ~ high_gni, color = ~ educ_fem_cat, data = two_way, size = 5) %>%
+  gf_line(size = 1.5, group = ~ educ_fem_cat) %>%
+  gf_labs(x = "", y = "Model Predicted Values", color = 'Formal education for females') #%>%
+  #gf_point(mean ~ high_gni, color = ~ educ_fem_cat, data = mean_duration, shape = 15, size = 5)
+```
+
+
+
+3. Summarize the statistical evidence to determine if the interaction effect added in #2 is important. That is, what does the statistical evidence state about whether this term is different from 0?
+
+4. Create a figure that summarizes the key statistical results from the model from #2 and #3. That is, create a figure from the model that seems to fit the best, either the one with the interaction effect or one without the interaction effect. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
+
+5. Build a new model that adds a new interaction effect between a categorical and a continuous attribute (ensure both terms are included as main effects as well). Interpret the interaction estimate, that is, what does the interaction parameter estimate mean in the context of the data?
+
+6. Summarize the statistical evidence to determine if the interaction effect added in #4 is important. That is, what does the statistical evidence state about whether this term is different from 0?
+
+7. Estimate and interpret the marginal means for the categorical attribute removing or holding constant the effect of the continuous attribute. Note, you can use the model from #4 for this, or if the interaction term was suggested to equal 0 based on #5, you can fit a simpler model that removes the interaction effect.
+
+8. Compute the raw means for the categorical attribute from #6. Do these means differ from the marginal means? Why or why not?
+
+9. Attempt at creating a figure to summarize the results from the best fitting model in #4. That is, create a figure to summarize the statistical effects from the model with or without the interaction effect between a categorical attribute and a continuous attribute. In a few sentences, describe why this figure is appropriate to summarize the statistical results.

@@ -43,8 +43,6 @@ gf_density(~ fertility_rate, data = dat, color = 'black', fill = 'lightblue') %>
   gf_labs(x = 'Fertility rate')
 ```
 
-
-
 Table 1. Frequencies of GNI (absolute and relatives)
 ```{r}
 dat %>%
@@ -52,10 +50,10 @@ dat %>%
   summarise(N = n()) %>%
   mutate(Perc = round((N / sum(N))*100, digits = 2))
 ```
+
 The variable `gni_class` is composed of 4 categories (Table 1). The distribution of absolute frequencies is uneven, with groups between 22 (Low) and 40 countries (Upper/Middle).
 
 Regarding the relationship between fertility rate and GNI in the sample countries, the means and standard deviations vary considerably. Fertility rate means decrease as per capita economic resources (ordinal categories) increase.
-
 
 Table 2. Descriptive statistics of fertility rate by GNI groups
 ```{r}
@@ -198,7 +196,6 @@ Table 8.
 gl_m1 = glance(m1)
 (glm1 = select(gl_m1, r.squared:p.value))
 ```
-
 
 Table 9. 
 ```{r}
