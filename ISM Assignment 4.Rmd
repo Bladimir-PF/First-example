@@ -79,21 +79,35 @@ If we add the multiplicative interaction in the model, we could state that the a
 3. Summarize the statistical evidence to determine if the interaction effect added in #2 is important. That is, what does the statistical evidence state about whether this term is different from 0?
 
 Based on the t-statistic and the p-value, it can be established that the interaction (B3) included in the model is not significant, and its interpretation is somewhat confusing. Indeed, when considering the Middle/Upper and Upper income categories and average female education over 6 years, the average fertility rate across countries is lower than the average obtained with any of the main effects. However, the positive sign of the interaction could lead one to think that when both characteristics interact, then the average fertility rate increases, which is not true.
-However, it may be that the use of the new variables is the cause of the overall misfit of the model with interaction (both R-squared and RSE decreased). When exploring a multiple regression model with main effects only, it can be seen that both indicators of model accuracy are lower than those observed in the previous main effects model (m2).
-Perhaps the reduction of both variables to binary categories has reduced the variability of the variables too much, so that the estimation errors grew, making statistical significance difficult. On the other hand, the main effects of the predictors are significant, so a good decision would be to omit the interaction from the model.
+However, it may be that the use of the new variables is the cause of the overall misfit of the model with interaction (both R-squared and RSE decreased). When exploring a multiple regression model with main effects only (m4), it can be seen that both indicators of model accuracy are lower than those observed in the previous main effects model (m2). 
+
+```{r}
+m4 = lm(fertility_rate ~ high_gni + educ_fem_cat)
+summary(m4)
+```
+
+Perhaps the reduction of both variables to binary categories has reduced the variability of the variables too much, so that the estimation errors grew, making statistical significance difficult.
+
+On the other hand, the main effects of the predictors are significant, thus a good decision would be to omit the interaction from the model and run a new model with the original gni_class categories to see if the model accuracy improves.
+
+```{r}
+m5 = lm(fertility_rate ~ gni_class + educ_fem_cat)
+summary(m5)
+```
+
+
+```{r}
+m6 = lm(fertility_rate ~ gni_class * educ_fem_cat)
+summary(m6)
+```
+
+```{r}
+(two_way1 = broom::augment(m6) %>%
+   distinct(gni_class, educ_fem_cat, .fitted))
+```
+
 
 4. Create a figure that summarizes the key statistical results from the model from #2 and #3. That is, create a figure from the model that seems to fit the best, either the one with the interaction effect or one without the interaction effect. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
-
-5. Build a new model that adds a new interaction effect between a categorical and a continuous attribute (ensure both terms are included as main effects as well). Interpret the interaction estimate, that is, what does the interaction parameter estimate mean in the context of the data?
-
-6. Summarize the statistical evidence to determine if the interaction effect added in #4 is important. That is, what does the statistical evidence state about whether this term is different from 0?
-
-7. Estimate and interpret the marginal means for the categorical attribute removing or holding constant the effect of the continuous attribute. Note, you can use the model from #4 for this, or if the interaction term was suggested to equal 0 based on #5, you can fit a simpler model that removes the interaction effect.
-
-8. Compute the raw means for the categorical attribute from #6. Do these means differ from the marginal means? Why or why not?
-
-9. Attempt at creating a figure to summarize the results from the best fitting model in #4. That is, create a figure to summarize the statistical effects from the model with or without the interaction effect between a categorical attribute and a continuous attribute. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
-
 
 ```{r}
 dat$educ_fem_cat = as.factor(dat$educ_fem_cat)
@@ -106,6 +120,26 @@ dat$high_gni = fct_recode(dat$high_gni,
                        'Upper/middle or Upper' = '1')
 ```
 
+```{r}
+gf_point(.fitted ~ high_gni, color = ~ educ_fem_cat, data = two_way, size = 5) %>%
+  gf_line(size = 1.5, group = ~ educ_fem_cat) %>%
+  gf_labs(x = "", y = "Model Predicted Values", color = 'Formal education for females') #%>%
+  #gf_point(mean ~ high_gni, color = ~ educ_fem_cat, data = mean_duration, shape = 15, size = 5)
+```
+
+5. Build a new model that adds a new interaction effect between a categorical and a continuous attribute (ensure both terms are included as main effects as well). Interpret the interaction estimate, that is, what does the interaction parameter estimate mean in the context of the data?
+
+6. Summarize the statistical evidence to determine if the interaction effect added in #4 is important. That is, what does the statistical evidence state about whether this term is different from 0?
+
+7. Estimate and interpret the marginal means for the categorical attribute removing or holding constant the effect of the continuous attribute. Note, you can use the model from #4 for this, or if the interaction term was suggested to equal 0 based on #5, you can fit a simpler model that removes the interaction effect.
+
+8. Compute the raw means for the categorical attribute from #6. Do these means differ from the marginal means? Why or why not?
+
+9. Attempt at creating a figure to summarize the results from the best fitting model in #4. That is, create a figure to summarize the statistical effects from the model with or without the interaction effect between a categorical attribute and a continuous attribute. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
+
+
+
+
 
 ```{r}
 (two_way = broom::augment(m3) %>%
@@ -116,12 +150,7 @@ dat$high_gni = fct_recode(dat$high_gni,
 (mean_duration <- df_stats(fertility_rate ~ high_gni + educ_fem_cat, data = dat, mean))
 ```
 
-```{r}
-gf_point(.fitted ~ high_gni, color = ~ educ_fem_cat, data = two_way, size = 5) %>%
-  gf_line(size = 1.5, group = ~ educ_fem_cat) %>%
-  gf_labs(x = "", y = "Model Predicted Values", color = 'Formal education for females') #%>%
-  #gf_point(mean ~ high_gni, color = ~ educ_fem_cat, data = mean_duration, shape = 15, size = 5)
-```
+
 
 
 
