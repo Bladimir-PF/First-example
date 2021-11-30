@@ -70,6 +70,30 @@ summary(m3)
 
 The estimated parameter B1 can be interpreted as the average change in the fertility rate when the reference level of GNI income is changed and the average education of women in the 6 years or less category is maintained. In other words, for one unit of change in the high_gni variable (moving from a low or middle/low income country to a medium/high or high income country), the average fertility rate of the countries decreases by -1.4915 units, keeping the category of average years of education of women constant (one could also say "when the other predictors equal zero").
 
+Similarly, the estimated parameter B2 expresses the average change in the fertility rate due to a one-unit change in categorized female education. This means that, when we move from the Low and Low/Middle income categories to the Middle/Upper and Upper categories, the average fertility rate across countries decrease by 1.65 units, holding constant, or after accounting for, the `gni_class` groups.
+
+Finally, coefficient B3 represents the additional effect of moving from the reference group (Low and Low/Middle gni_class and 6 or less years of education among women) to the other categories of the predictors, coded as binary variables. The interaction term B3 is the "above" effect of Middle/Upper and Upper categories of gni_class and having 7 or more years of average education among women on the fertility rate across countries, holding constant the other attributes of the model  (in this case, the presence of the constitutive terms of the interaction, since we could not properly test the interaction without include them).
+
+If we add the multiplicative interaction in the model, we could state that the average fertility rate of countries classified in the Middle/Upper or Upper income categories and whose average years of female education is greater than 6 years is about 1.86. However, as the model summary model shows, the interaction term is not significant (p-value = 0.091151) at a significance level of 5%, thus we can not claim that the relationship between our two predictors is significantly different from zero in the population.
+
+3. Summarize the statistical evidence to determine if the interaction effect added in #2 is important. That is, what does the statistical evidence state about whether this term is different from 0?
+
+Based on the t-statistic and the p-value, it can be established that the interaction (B3) included in the model is not significant, and its interpretation is somewhat confusing. Indeed, when considering the Middle/Upper and Upper income categories and average female education over 6 years, the average fertility rate across countries is lower than the average obtained with any of the main effects. However, the positive sign of the interaction could lead one to think that when both characteristics interact, then the average fertility rate increases, which is not true.
+However, it may be that the use of the new variables is the cause of the overall misfit of the model with interaction (both R-squared and RSE decreased). When exploring a multiple regression model with main effects only, it can be seen that both indicators of model accuracy are lower than those observed in the previous main effects model (m2).
+Perhaps the reduction of both variables to binary categories has reduced the variability of the variables too much, so that the estimation errors grew, making statistical significance difficult. On the other hand, the main effects of the predictors are significant, so a good decision would be to omit the interaction from the model.
+
+4. Create a figure that summarizes the key statistical results from the model from #2 and #3. That is, create a figure from the model that seems to fit the best, either the one with the interaction effect or one without the interaction effect. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
+
+5. Build a new model that adds a new interaction effect between a categorical and a continuous attribute (ensure both terms are included as main effects as well). Interpret the interaction estimate, that is, what does the interaction parameter estimate mean in the context of the data?
+
+6. Summarize the statistical evidence to determine if the interaction effect added in #4 is important. That is, what does the statistical evidence state about whether this term is different from 0?
+
+7. Estimate and interpret the marginal means for the categorical attribute removing or holding constant the effect of the continuous attribute. Note, you can use the model from #4 for this, or if the interaction term was suggested to equal 0 based on #5, you can fit a simpler model that removes the interaction effect.
+
+8. Compute the raw means for the categorical attribute from #6. Do these means differ from the marginal means? Why or why not?
+
+9. Attempt at creating a figure to summarize the results from the best fitting model in #4. That is, create a figure to summarize the statistical effects from the model with or without the interaction effect between a categorical attribute and a continuous attribute. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
+
 
 ```{r}
 dat$educ_fem_cat = as.factor(dat$educ_fem_cat)
@@ -101,16 +125,3 @@ gf_point(.fitted ~ high_gni, color = ~ educ_fem_cat, data = two_way, size = 5) %
 
 
 
-3. Summarize the statistical evidence to determine if the interaction effect added in #2 is important. That is, what does the statistical evidence state about whether this term is different from 0?
-
-4. Create a figure that summarizes the key statistical results from the model from #2 and #3. That is, create a figure from the model that seems to fit the best, either the one with the interaction effect or one without the interaction effect. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
-
-5. Build a new model that adds a new interaction effect between a categorical and a continuous attribute (ensure both terms are included as main effects as well). Interpret the interaction estimate, that is, what does the interaction parameter estimate mean in the context of the data?
-
-6. Summarize the statistical evidence to determine if the interaction effect added in #4 is important. That is, what does the statistical evidence state about whether this term is different from 0?
-
-7. Estimate and interpret the marginal means for the categorical attribute removing or holding constant the effect of the continuous attribute. Note, you can use the model from #4 for this, or if the interaction term was suggested to equal 0 based on #5, you can fit a simpler model that removes the interaction effect.
-
-8. Compute the raw means for the categorical attribute from #6. Do these means differ from the marginal means? Why or why not?
-
-9. Attempt at creating a figure to summarize the results from the best fitting model in #4. That is, create a figure to summarize the statistical effects from the model with or without the interaction effect between a categorical attribute and a continuous attribute. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
