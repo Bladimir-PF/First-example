@@ -1,13 +1,13 @@
 ---
-title: "ISM Assignment 3"
+  title: "ISM Assignment 3"
 author: "Geraldo B. Padilla F."
 date: "11/19/2021"
 output:
   word_document: default
-  html_document: default
+html_document: default
 ---
-
-```{r setup, include=FALSE}
+  
+  ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 

@@ -9,7 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
+```{r}
+loadlibs <- function(){
+  library('mosaic')
+  library('car')
+  print ('libraries loaded')
+}
+loadlibs()
+```
 
 
 ```{r}
