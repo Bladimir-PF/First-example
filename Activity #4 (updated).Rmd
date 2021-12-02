@@ -1,0 +1,185 @@
+---
+title: "ISM - Activity 4"
+author: "Geraldo B. Padilla F., ID (01145225), Ahmed Bediwy, ID (01466320), Mubarak Mojoyinola, ID (01451893)"
+date: "01/12/2021"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+ 
+# Intro
+ 
+```{r, include=FALSE}
+pack <- c("tidyverse", "mosaic", "ggformula", 'car')
+lapply(pack, require, character.only = TRUE)
+dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
+theme_set(theme_bw(base_size = 18))
+attach(dat)
+```
+
+```{r, include=FALSE}
+dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/main/data/pumpkins.csv")
+theme_set(theme_bw(base_size = 18))
+attach(dat)
+```
+
+##Guiding Question
+
+How much variation is explained in the pumpkin weight (weight_lbs) by the over the top pumpkin measurement (inches)?
+After controlling for pumpkin over the top measurement, is there any differences between United States growers compared to growers from other countries?
+
+Questions
+
+1. Explore the research questions descriptively. What are key messages based on the descriptive analysis?
+
+```{r}
+gf_density(~ weight_lbs, data = dat) %>%
+  gf_labs(x = 'Pumpkin weight (lbs)')
+mean(weight_lbs)
+sd(weight_lbs)
+```
+
+The weight of pumpkins has a skewed distribution to the right (positive skewness). The values are distributed around the mean = 805.26, with a standard deviation = 531.07.
+
+```{r}
+gf_density(~ ott, data = dat) %>%
+  gf_labs(x = "Over the top of the pumpkin measurement (inches)")
+mean(ott)
+sd(ott)
+```
+
+The over the top of the pumpkin measurement (ott) is useful to estimate the weight of giant pumpkins (is composed of 3 measures: circumference, end to end and side to side). The distribution of this variable, in general terms, looks normal (although it is slightly left skewed) it has little dispersion in the tails). The mean of the distribution is 282.64 inches and one standard deviation equals 124.95.
+
+```{r}
+gf_point(weight_lbs ~ ott, data = dat, size = 2, alpha = .2) %>%
+  gf_smooth(method = 'loess', linetype = 2, color = 'red') %>%
+  gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
+  gf_labs(x = 'Over the top of the pumpkin measurement (inches)',
+          y = "Pumpkin weight (lbs)")
+```
+
+```{r}
+cor(weight_lbs ~ ott)
+```
+
+The correlation coefficient shows a high, positive, and linear relationship between the two attributes. However, the plot contradicts with the linear relationship inferred from the correlation coefficient. Additionally, according to the context of the problem it doesn't make sense to include zero value for the `ott` variable because there are no pumpkins with zero dimensions. For this reason we filtered the data set.
+
+```{r}
+dat1 <- dat %>%
+  filter(ott > 0)
+```
+
+```{r}
+gf_point(weight_lbs ~ ott, data = dat1, size = 2, alpha = .2) %>%
+  gf_smooth(method = 'loess', linetype = 2, color = 'red') %>%
+  gf_smooth(method = 'lm', linetype = 2, color = 'lightblue') %>%
+  gf_labs(x = 'Over the top of the pumpkin measurement (inches)',
+          y = "Pumpkin weight (lbs)")
+```
+
+```{r}
+cor(weight_lbs ~ ott, data = dat1)
+```
+
+The correlation coefficient value improved after eliminating the zero values for `ott`, but the loess line still suggesting a nonlinear relationship (more like an exponential relationship).
+
+
+2. Fit a linear regression model to explore the first research question. Summarize the key messages/takeaways from the results of this regression model.
+
+```{r}
+m1 = lm(weight_lbs ~ ott, data = dat1)
+summary(m1)
+```
+
+Based on the results of the regression results, the value of the intercept is -1139 and the slope is 6.25. This means that, on average, the weight of pumpkins is -1139 pounds when `ott` equals zero; on the other hand, for one unit increase in inches `ott` the weight of the pumpkins increase on average by 6.25 pounds. It is worth mentioning that in this context, the intercept is not interpretable as we cannot have a zero value for `ott` and it is impossible to have pumpkins with negative weight. As a result, we perform a mean centering transformation for the predictor variable.
+
+```{r}
+dat2 <- dat1 %>%
+  mutate(ott_mean = ott - mean(ott))
+m2 = lm(weight_lbs ~ ott_mean, data = dat2)
+summary(m2)
+```
+According to the centered model, the average weight of pumpkins is 847 pounds when `ott` is centered at the mean value of 282.64 inches. On the other hand, for one unit change in the position of `ott`  values from the mean, the average weight of pumpkins increase in 6.25 pounds.
+
+3. Fit a second linear regression model to explore the subquestion above. Summarize the key messages/takeaways from the results of this regression model.
+After controlling for pumpkin over the top measurement, is there any differences between United States growers compared to growers from other countries?
+
+
+```{r}
+m3 = lm(weight_lbs ~ us_dummy, data = dat2)
+summary(m3)
+```
+
+TO explore the differences between the US growers compared to the non US growers we perform a linear regression model to analyze the relationship between growers and pumpkins' weight. According to the results, the mean average weight of pumpkins among the US farmers is 704.61 pounds, whereas for the non US farmers it is 929.46 pounds. Moreover, this mean difference is significant (p-value = 8.34e-15).  
+
+
+```{r}
+m4 = lm(weight_lbs ~ ott_mean + us_dummy, data = dat2)
+summary(m4)
+```
+
+After adjusting the mean differences between the US and non US growers by `ott` mean centered values, the average weight of pumpkins among the US growers is 833.18 pounds and the `ott_mean` equal to zero (when it centered at the mean value). The mean difference between categories of growers after accounting for `ott_mean` is 22.3; this represents a big change compared to the first model, where the mean difference was 224.85.
+
+
+4. Fit the third linear regression model that includes an interaction between the two primary attributes of interest from the research questions.
+
+```{r}
+m5 = lm(weight_lbs ~ ott_mean * us_dummy, data = dat2)
+summary(m5)
+```
+Based in the summary of the model, we can describe the following parameter of the model;
+
+$B_{0}$: This represents the average weight of pumpkins among US farmers adjusted by `ott_mean`.
+
+$B_{1}$: For one unit change in the position of `ott_mean` values, the average change in weight of pumpkins is 5.85 holding the other attributes constant.
+
+$B_{2}$: This refers to the mean difference of pumpkins weight between US and Non-US growers for a given value of `ott_mean`.
+
+Finally, the interaction $B_{3}$, represents the additional impact on pumpkins weight among US growers for one unit change in the position of `ott_mean`
+
+5. Finally, instead of comparing United States vs other countries, try a new series of models equivalent to #3 and #4 that break the United States by their region (ie, use us_region).
+a. Are all of these models nested?
+b. Perform the appropriate model comparison to identify the best fitting model.
+
+```{r}
+dat2 <- dat2 %>%
+  mutate(midwest = ifelse(us_region == 'midwest', 1, 0),
+         northeast = ifelse(us_region == 'northeast', 1, 0),
+         west = ifelse(us_region == 'west', 1, 0),
+         south = ifelse(us_region == 'south', 1, 0),
+         outside_US = ifelse(us_region == 'other', 1, 0))
+```
+
+```{r}
+m6 = lm(weight_lbs ~ ott_mean + midwest, data = dat2)
+m6_int = lm(weight_lbs ~ ott_mean * midwest, data = dat2)
+
+m7 = lm(weight_lbs ~ ott_mean + northeast, data = dat2)
+m7_int = lm(weight_lbs ~ ott_mean * northeast, data = dat2)
+
+m8 = lm(weight_lbs ~ ott_mean + west, data = dat2)
+m8_int = lm(weight_lbs ~ ott_mean * west, data = dat2)
+
+m9 = lm(weight_lbs ~ ott_mean + south, data = dat2)
+m9_int = lm(weight_lbs ~ ott_mean * south, data = dat2)
+```
+
+```{r}
+summary(m6_int)
+summary(m7_int)
+summary(m8_int)
+summary(m9_int)
+```
+a. Yes, the different versions of the models are nested because they include the same attributes.
+b. As the models include the same attributes, we can not formally test the difference between them using ANOVA test. For this reason, we should select one of the models based on one observed criterion. In this case, we could select m7 which set the northeast region as the reference level, because it explains the most variation in `weight_lbs`.
+
+6. Is the added complexity of splitting the United States into specific regions justified? Why or why not?
+
+It is not justified in this example for two reasons. First, the model that includes the original dummy variable (m5) is less complicated and easier to understand compared to the other alternative models. In fact, it is easier and more interpretable to compare pumpkin weights between farmers in the U.S. or outside the U.S. than between farmers in any region of the U.S. with respect to those in all other regions of the U.S. and who are also from outside the U.S. 
+
+Second, if we were to select the best model from the alternative versions of m5 (which is m7), we would not gain much in terms of precision or inference (adjusted R-squared of m7 is .9071 vs .9071 of m5). If we compare the adjusted R-squared, the RSE and the p-values of the estimated predictors among all models (m5, m6, m7 and m8), we will see that they are practically the same. Finally, the "northeast" version (m7) of model m5, which shows the best adjusted R-squared, is difficult to understand and does not significantly exceed the fit of model m5.

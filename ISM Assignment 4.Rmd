@@ -67,6 +67,10 @@ Table 3. Multiple linear Regression to Fertility rate across countries with mult
 m3 = lm(fertility_rate ~ high_gni*educ_fem_cat, data = dat)
 summary(m3)
 ```
+```{r}
+(two_way1 = broom::augment(m3) %>%
+   distinct(high_gni, educ_fem_cat, .fitted))
+```
 
 The estimated parameter B1 can be interpreted as the average change in the fertility rate when the reference level of GNI income is changed and the average education of women in the 6 years or less category is maintained. In other words, for one unit of change in the high_gni variable (moving from a low or middle/low income country to a medium/high or high income country), the average fertility rate of the countries decreases by -1.4915 units, keeping the category of average years of education of women constant (one could also say "when the other predictors equal zero").
 
