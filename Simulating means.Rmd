@@ -1,0 +1,76 @@
+---
+title: "Generalizability project"
+author: "Geraldo B. Padilla F."
+date: "12/2/2021"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('tidyverse')
+library('simglm')
+library('future')
+```
+
+Step 1
+
+```{r, message=FALSE}
+set.seed(250)
+dat = as.data.frame(rnorm(2000))
+simple_alloc <- function(x){
+  set.seed(343)   # for reproducibility 
+  cbind(x, Allocation = randomizr::simple_ra(N = nrow(x)))
+}
+dat = simple_alloc(dat)
+names (dat) = c("x", 'Group')
+attach(dat)
+table(Group)
+aggregate(x~Group, data = dat, FUN = mean)
+```
+
+Step 3
+
+```{r}
+est1 = (dat %>%
+   filter(Group == 0) %>%
+  summarise(Mean0 = mean(x))) - (dat %>%
+   filter(Group == 1) %>%
+  summarise(Mean1= mean(x)))
+```
+
+Step 4
+
+```{r}
+set.seed(120)
+x1 = rnorm(1000)
+set.seed(121)
+x2 = rnorm(1000)
+mean(x1)
+mean(x2)
+est2 = mean(x1) - mean(x2)
+```
+ 
+Step 7
+
+```{r}
+est1 - est2
+```
+
+```{r}
+plan(multicore)
+set.seed(2021)
+sim_arguments <- list(
+    formula = y ~ x,
+    fixed = list(x = list(var_type = 'continuous', mean = 100, sd = 20)),
+    error = list(variance = 100),
+    sample_size = 1000,
+    reg_weights = c(5, .5)
+)
+
+sim_data <- simulate_fixed(data = NULL, sim_arguments) %>%
+  simulate_error(sim_arguments) %>%
+  generate_response(sim_arguments)
+```
+
