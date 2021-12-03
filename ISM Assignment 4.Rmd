@@ -43,11 +43,11 @@ m2 = lm(fertility_rate ~ educ_fem_mc + contraceptv_mc + gni_class, data = dat)
 summary(m2)
 ```
 
-The second model (`fertility_rate ~ educ_fem_mc + contraceptv_mc + gni_class, data = dat`) showed better fit indicators (RSE and adjusted R-squared) to data than the first model. The two quantitative variables and the gni categories were significant at the 1% significance level and had negative signs, meaning that all else equal these attributes decrease the fertility rate across countries. The largest difference in the gni categories, when education and contraceptive use among women are centered on the mean, is between the Low and Middle/Upper categories (-1.494944). In other words, a one-unit change in gni from Low to Middle/Upper decreases the countries' average fertility rate by 1.53, holding all the other attributes constant.
+The second model (`fertility_rate ~ educ_fem_mc + contraceptv_mc + gni_class, data = dat`) showed better fit indicators (RSE and adjusted R-squared) to data than the first model. The two quantitative variables and the gni categories were significant at the 1% significance level and had negative signs, meaning that all else equal these attributes decrease the fertility rate across countries. The largest difference in the gni categories, when education and contraceptive use among women are centered on the mean and remain constant, is between the Low and Middle/Upper categories (-1.494944). In other words, a one-unit change in gni from Low to Middle/Upper decreases the countries' average fertility rate by 1.53 units, after controlling for female education and contraceptive use and holding all other gni categories constant.
 
 2. Explore an interaction between two categorical attributes. Interpret the interaction estimate. That is, what does the parameter estimate mean in the context of the data? Note: I recommend including at most a two-way interaction effect (ie, an interaction between two attributes) to promote interpretability here.
 
-To facilitate the interpretation of the model (m3), I will use the variable high_gni, a reduced version of gni_class. On the other hand, the variable average years of education of women (educ_female) will be divided into two categories: 6 or less years and 7 years or more. This new binary variable (educ_fem_cat) was constructed according to the average years of primary (at least 6 years) and secondary education.
+To facilitate the interpretation of the model (m3), I will use the variable high_gni, a reduced version of gni_class. On the other hand, the variable 'average years of education of women' (educ_female) will be divided into two categories: 6 or less years and 7 years or more. This new binary variable (educ_fem_cat) was constructed according to the average years of primary (at least 6 years) and secondary education.
 
 ```{r}
 dat = dat%>%
@@ -60,59 +60,6 @@ high_gni = 1 (high/medium or high income),
 educ_fem_cat = 0 (6 or less years of education),
 educ_fem_cat = 1 (7 or more years of education).
 
-The interpretation of the coefficients of the model with interaction (m3) is slightly different from the model that only includes main effects. In this model, the B0 intercept represents the average fertility rate of those countries with Low and Middle/Low income and where women have on average 6 years of education or less. In this interpretation we could add the phrase "when all other predictors equal zero" or "holding all other attributes constant", but since only binary qualitative variables have been included, I think it is not necessary.
-
-Table 3. Multiple linear Regression to Fertility rate across countries with multiplicative interaction
-```{r}
-m3 = lm(fertility_rate ~ high_gni*educ_fem_cat, data = dat)
-summary(m3)
-```
-```{r}
-(two_way1 = broom::augment(m3) %>%
-   distinct(high_gni, educ_fem_cat, .fitted))
-```
-
-The estimated parameter B1 can be interpreted as the average change in the fertility rate when the reference level of GNI income is changed and the average education of women in the 6 years or less category is maintained. In other words, for one unit of change in the high_gni variable (moving from a low or middle/low income country to a medium/high or high income country), the average fertility rate of the countries decreases by -1.4915 units, keeping the category of average years of education of women constant (one could also say "when the other predictors equal zero").
-
-Similarly, the estimated parameter B2 expresses the average change in the fertility rate due to a one-unit change in categorized female education. This means that, when we move from the Low and Low/Middle income categories to the Middle/Upper and Upper categories, the average fertility rate across countries decrease by 1.65 units, holding constant, or after accounting for, the `gni_class` groups.
-
-Finally, coefficient B3 represents the additional effect of moving from the reference group (Low and Low/Middle gni_class and 6 or less years of education among women) to the other categories of the predictors, coded as binary variables. The interaction term B3 is the "above" effect of Middle/Upper and Upper categories of gni_class and having 7 or more years of average education among women on the fertility rate across countries, holding constant the other attributes of the model  (in this case, the presence of the constitutive terms of the interaction, since we could not properly test the interaction without include them).
-
-If we add the multiplicative interaction in the model, we could state that the average fertility rate of countries classified in the Middle/Upper or Upper income categories and whose average years of female education is greater than 6 years is about 1.86. However, as the model summary model shows, the interaction term is not significant (p-value = 0.091151) at a significance level of 5%, thus we can not claim that the relationship between our two predictors is significantly different from zero in the population.
-
-3. Summarize the statistical evidence to determine if the interaction effect added in #2 is important. That is, what does the statistical evidence state about whether this term is different from 0?
-
-Based on the t-statistic and the p-value, it can be established that the interaction (B3) included in the model is not significant, and its interpretation is somewhat confusing. Indeed, when considering the Middle/Upper and Upper income categories and average female education over 6 years, the average fertility rate across countries is lower than the average obtained with any of the main effects. However, the positive sign of the interaction could lead one to think that when both characteristics interact, then the average fertility rate increases, which is not true.
-However, it may be that the use of the new variables is the cause of the overall misfit of the model with interaction (both R-squared and RSE decreased). When exploring a multiple regression model with main effects only (m4), it can be seen that both indicators of model accuracy are lower than those observed in the previous main effects model (m2). 
-
-```{r}
-m4 = lm(fertility_rate ~ high_gni + educ_fem_cat)
-summary(m4)
-```
-
-Perhaps the reduction of both variables to binary categories has reduced the variability of the variables too much, so that the estimation errors grew, making statistical significance difficult.
-
-On the other hand, the main effects of the predictors are significant, thus a good decision would be to omit the interaction from the model and run a new model with the original gni_class categories to see if the model accuracy improves.
-
-```{r}
-m5 = lm(fertility_rate ~ gni_class + educ_fem_cat)
-summary(m5)
-```
-
-
-```{r}
-m6 = lm(fertility_rate ~ gni_class * educ_fem_cat)
-summary(m6)
-```
-
-```{r}
-(two_way1 = broom::augment(m6) %>%
-   distinct(gni_class, educ_fem_cat, .fitted))
-```
-
-
-4. Create a figure that summarizes the key statistical results from the model from #2 and #3. That is, create a figure from the model that seems to fit the best, either the one with the interaction effect or one without the interaction effect. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
-
 ```{r}
 dat$educ_fem_cat = as.factor(dat$educ_fem_cat)
 dat$educ_fem_cat = fct_recode(dat$educ_fem_cat,
@@ -122,16 +69,95 @@ dat$high_gni = as.factor(dat$high_gni)
 dat$high_gni = fct_recode(dat$high_gni,
                        'Low or Low/middle' = '0',
                        'Upper/middle or Upper' = '1')
+dat$educ_fem_cat = as.character(dat$educ_fem_cat)
+dat$high_gni = as.character(dat$high_gni)
 ```
 
+The interpretation of the coefficients of the model with an interaction (m3) is slightly different from the model that only includes main effects. In this model, the intercept (b0) represents the average fertility rate of those countries with Low and Middle/Low income and where women have on average 6 years of education or less (reference group). In this interpretation we could add the phrase "when all other predictors equal zero", but since only binary qualitative variables have been included, I think it is not necessary.
+
+Table 3. Multiple linear Regression to Fertility rate across countries with multiplicative interaction
+```{r}
+m3 = lm(fertility_rate ~ high_gni*educ_fem_cat, data = dat)
+summary(m3)
+```
+
+The estimated parameter B1 can be interpreted as the average change in the fertility rate when the reference level of GNI income is changed and the average education of women in the 6 years or less category is maintained. In other words, for one unit of change in the high_gni variable (moving from a low or middle/low income country to a medium/high or high income country), the average fertility rate of the countries decreases by 1.4915 units, keeping the category of average years of education of women constant (one could also say "when the other predictors equal zero").
+
+Similarly, the estimated parameter B2 expresses the average change in the fertility rate due to a one-unit change in categorized female education. This means that, when we move from countries with 6 or fewer years of average education among women to others with better educational opportunities for them, the average fertility rate decreases by 1.65 units, holding the `high_gni` group constant.
+
+Finally, coefficient B3 represents the additional effect of moving from the reference group (Low and Low/Middle gni_class and 6 or less years of education among women) to the other categories of the predictors. The interaction term B3 is the "above" effect of Middle/Upper and Upper categories of high_gni and having 7 or more years of average education among women on the fertility rate across countries, holding constant the other attributes of the model. This is the additional mean level change on the outcome produced by the categories of b1 and b2, holding the other attributes constant.
+
+If we add the multiplicative interaction in the model, we could state that the average fertility rate of countries classified in the Middle/Upper or Upper income categories and whose average years of female education is greater than 6 years is about 1.86. However, as the model summary model shows, the interaction term is insignificant (p-value = 0.091151) at a significance level of 5%, thus we can not claim that the relationship between our two predictors is significantly different from zero in the population.
+
+3. Summarize the statistical evidence to determine if the interaction effect added in #2 is important. That is, what does the statistical evidence state about whether this term is different from 0?
+
+Based on the t-statistic and the p-value, it can be established that the interaction (B3) included in the model is not significant, and its interpretation is somewhat confusing. Indeed, when considering the Middle/Upper and Upper income categories and average female education over 6 years, the average fertility rate across countries is lower than the average obtained in any of the other categories (Table 4).
+
+Table 4. Fitted values of MLR model with interaction (m3)
+```{r}
+(two_way = broom::augment(m3) %>%
+   distinct(high_gni, educ_fem_cat, .fitted))
+```
+
+The positive sign of the interaction (b3) could lead one to think that when both characteristics interact, then the average fertility rate increases, which is not true. The lack of significance in the interaction of both variables is suspicious, since one would think that the availability of economic resources is linked to the educational level of individuals. However, in this hypothesis there is a third variable that we cannot test: the source of income. In the reasoning that guides my research question, I assume that income comes mainly from work, and that work is more easily obtained when people have high levels of education. Thus, women living in countries with high per capita income and several years of average education for them would tend to have fewer children than women in countries with worse economic and educational conditions. However, again, this may be influenced by the source of income or other variables, which makes the relationship between income and education not significant in explaining the fertility rate of women.
+
+4. Create a figure that summarizes the key statistical results from the model from #2 and #3. That is, create a figure from the model that seems to fit the best, either the one with the interaction effect or one without the interaction effect. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
+
+First, since the interaction included in the model was not significant, we can explore a model without it (the interaction effect has been removed only because of the lack of significance; no power analysis was performed because it is beyond the scope of this paper).
+
+The model with main effects (Table 5) is virtually the same as the previous version with the interaction term. Both models have similar RSE and R-squared values. Likewise, in both cases the predictors are significant at 5% significance level and the signs of the estimated parameters are negative. However, the model with main effects only contains those estimated parameters that are an input to the model.
+
+Table 5. Simple Linear Regression model with categorical attributes
+```{r}
+m4 = lm(fertility_rate ~ high_gni+educ_fem_cat, data = dat)
+summary(m4)
+```
+
+Figure 1 shows an interaction plot for the new model with main effects (m4). Immediately, it can be seen that the model has predicted identical slopes between female education groups when moving from low per capita income countries to high per capita income countries.
+
+This should not be a surprise because of the way a regression model with dichotomous variables works. The graph is showing the average change between high_gni categories when average education is held constant. Thus, when the reference category (low gni_high and few years of education in educ_fem_cat) shifts from low high_gni to high, holding the average education of women constant, the average change is negative (-0.9636). Another way to express this is with the formula: 4.0219 + (-0.9636), i.e., the estimate of the average fertility rate when high_gni varies by one unit, holding average female education constant.
+
+Figure 1. Interaction plot for the main effects of model m4 
+```{r}
+two_way_predict <- broom::augment(m4) %>%
+   distinct(high_gni, educ_fem_cat, .fitted)
+gf_point(.fitted ~ high_gni, color = ~ educ_fem_cat, data = two_way_predict, size = 5) %>%
+  gf_line(size = 1.5, group = ~ educ_fem_cat) %>%
+  gf_labs(x = "", y = "Model Predicted Values", color = 'Average female education')
+```
+
+Figure 2 shows the interaction plot for the values predicted by the model that does include the interaction between predictors. Although visually it looks something like an interaction, since the slopes between groups is not constant, the model was not able to detect this behavior.
+
+Figure 2. Interaction plot for MLR with an interaction term (m3)
 ```{r}
 gf_point(.fitted ~ high_gni, color = ~ educ_fem_cat, data = two_way, size = 5) %>%
   gf_line(size = 1.5, group = ~ educ_fem_cat) %>%
-  gf_labs(x = "", y = "Model Predicted Values", color = 'Formal education for females') #%>%
-  #gf_point(mean ~ high_gni, color = ~ educ_fem_cat, data = mean_duration, shape = 15, size = 5)
+  gf_labs(x = "", y = "Model Predicted Values", color = 'Average female education')
 ```
 
+For this reason, I believe that Figure 1, which does not include interactions between predictors, is a better way to describe the findings so far. Regardless of the fact that the interaction was not significant, this figure supports one of the research assumptions: that the average fertility rate across countries decreases when considering variables linked to people's income and women's education.
+
 5. Build a new model that adds a new interaction effect between a categorical and a continuous attribute (ensure both terms are included as main effects as well). Interpret the interaction estimate, that is, what does the interaction parameter estimate mean in the context of the data?
+
+The following regression model (Table 6) has the basic structure of an analysis of covariance (ANCOVA). For this reason, I will analyze the results seeking to answer the question whether there is variation between the contrast groups once a covariate related to the dependent variable is included in the model.
+
+Specifically, we now have a regression model that predicts fertility rate values across countries by controlling the difference between average years of female education by contraceptive use in the population (centered at the mean).
+
+Table 6. MLR model with interaction term
+```{r}
+m5 = lm(fertility_rate ~ contraceptv_mc * educ_fem_cat, data = dat)
+summary(m5)
+```
+
+To answer the question, the interaction term (b3) is the average difference between the slope of those countries where the average female education is higher than 6 years compared to those with lower female education levels. In this case, given that the contraceptive use variable is centered on the mean, the interaction does not add any effect to the base model (recall that when calculating the adjusted means for the category of more than 6 years of female schooling we would have: (3.328347 - 1.304661) + ((-0.049391 + 0.035649 )*0) = 2.02 .
+However, as the values of contraceptive use increase with respect to their mean, we can assume that their effect on the fertility rate among those countries with more than 6 years of average female education will also increase.
+
+This can be checked using the lsmeans function.
+
+```{r}
+lsmeans(m5, ~ educ_fem_cat)
+```
+
 
 6. Summarize the statistical evidence to determine if the interaction effect added in #4 is important. That is, what does the statistical evidence state about whether this term is different from 0?
 
