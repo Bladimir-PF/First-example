@@ -2,7 +2,9 @@
 title: "ISM Assignment 4"
 author: "Geraldo B. Padilla F."
 date: "11/19/2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -19,7 +21,7 @@ dat <- readr::read_csv("https://raw.githubusercontent.com/lebebr01/psqf_6243/mai
 attach(dat)
 ```
 
-## Questions
+# Questions
 
 1. Briefly summarize the two competing models fitted in assignment 3. Which one showed the evidence of fitting the best?
 
@@ -63,12 +65,12 @@ educ_fem_cat = 1 (7 or more years of education).
 ```{r}
 dat$educ_fem_cat = as.factor(dat$educ_fem_cat)
 dat$educ_fem_cat = fct_recode(dat$educ_fem_cat,
-                       '6 or less years of education' = '0',
-                       '7 or more years of education' = '1')
+                       '<7 years of education' = '0',
+                       '>6 years of education' = '1')
 dat$high_gni = as.factor(dat$high_gni)
 dat$high_gni = fct_recode(dat$high_gni,
-                       'Low or Low/middle' = '0',
-                       'Upper/middle or Upper' = '1')
+                       'Low_Low/middle' = '0',
+                       'Upper/middle_Upper' = '1')
 dat$educ_fem_cat = as.character(dat$educ_fem_cat)
 dat$high_gni = as.character(dat$high_gni)
 ```
@@ -149,38 +151,49 @@ m5 = lm(fertility_rate ~ contraceptv_mc * educ_fem_cat, data = dat)
 summary(m5)
 ```
 
-To answer the question, the interaction term (b3) is the average difference between the slope of those countries where the average female education is higher than 6 years compared to those with lower female education levels. In this case, given that the contraceptive use variable is centered on the mean, the interaction does not add any effect to the base model (recall that when calculating the adjusted means for the category of more than 6 years of female schooling we would have: (3.328347 - 1.304661) + ((-0.049391 + 0.035649 )*0) = 2.02 .
-However, as the values of contraceptive use increase with respect to their mean, we can assume that their effect on the fertility rate among those countries with more than 6 years of average female education will also increase.
+To answer the question, the interaction term (b3) is the average difference between the slope of those countries where the average female education is higher than 6 years compared to those with lower female education levels. This multiplicative interaction can also be interpreted as the additional effect that one unit of change in contraceptive use (relative to its mean) has on the fertility rate when the reference category is those countries with more than 6 years of average education among women.
 
-This can be checked using the lsmeans function.
+In this case, given that the contraceptive use variable is centered on the mean, the interaction does not add any effect to the base model (recall that when calculating the adjusted means for the category of more than 6 years of female schooling we would have: [3.328347 - 1.304661] + [(-0.049391 + 0.035649)*0] = 2.02). This can be checked using the lsmeans function (Table 7).
 
+Table 7. Adjusted means of model m5 using `emmeans` function
 ```{r}
-lsmeans(m5, ~ educ_fem_cat)
+emmeans(m5, ~ educ_fem_cat)
 ```
 
+6. Summarize the statistical evidence to determine if the interaction effect added in #4 (#5?) is important. That is, what does the statistical evidence state about whether this term is different from 0?
 
-6. Summarize the statistical evidence to determine if the interaction effect added in #4 is important. That is, what does the statistical evidence state about whether this term is different from 0?
+According to the data from the last model (m5), we can review different indicators to assess the impacts of the inclusion of interaction.
+
+First, the interaction term b3 has a low standard error, leading to a small t-statistic and p-value (equal to 3.72e-05, significant at a 1% significance level), so if we are interested in making inferences about the relationship of the predictors in the population, we could say that there is indeed evidence to claim that the relationship between contraceptive use (centered on the mean) and women's mean education (in categories) would not be different from zero (at even a 99% confidence level) in the population. From the NHST perspective, it can be established that there is a difference in the slopes comparing the focal (more than 6 years of education) and reference (6 years or less) groups, controlling for one covariate (contraceptive use, centered on the mean).
 
 7. Estimate and interpret the marginal means for the categorical attribute removing or holding constant the effect of the continuous attribute. Note, you can use the model from #4 for this, or if the interaction term was suggested to equal 0 based on #5, you can fit a simpler model that removes the interaction effect.
 
+This was done in the previous question (Table 7). Based on those results, the following can be said:
+Once the effect that contraceptive use (centered on the mean) among women or their sexual partners has on the fertility rate of countries has been removed, we find that the average of the predicted variable among countries with 6 or less female education is approximately 3.33, while among those countries with more than 6 years of female education it decreases to an average of 2.02 (it is important to remember that due to the use of a covariate centered on the mean, both the effect of this variable and of the interaction is 0 in the base model).
+
 8. Compute the raw means for the categorical attribute from #6. Do these means differ from the marginal means? Why or why not?
+
+The raw means of the categories of the independent variable (average female education) show values different from those predicted by the ANCOVA model with interaction (m5). It is important to mention that because of the way in which the adjusted means are calculated, the differences with respect to the raw means can lead to higher or lower results; this is why ANCOVA models should be performed instead of predicting the effect of one or several covariates on the relationship between a factor and an outcome.
+
+In this exercise, the average fertility rate of the reference group (countries with 6 or less years of average female education) decreased after adding the covariate 'contraceptive use' (centered on the mean) and a first order interaction effect.
+
+On the other hand, the average fertility rate of those countries with 6 or more years of female education increased slightly, which shows that the variability linked to `contraceptive use` affects the relationship between the comparison groups and the dependent variable in different ways.
+
+Table 8. Raw means of fertility rate by average female education (in categories)
+```{r}
+df_stats(fertility_rate ~ educ_fem_cat, data = dat, mean)
+```
 
 9. Attempt at creating a figure to summarize the results from the best fitting model in #4. That is, create a figure to summarize the statistical effects from the model with or without the interaction effect between a categorical attribute and a continuous attribute. In a few sentences, describe why this figure is appropriate to summarize the statistical results.
 
+The Figure 3 is a graph describing the relationship between the covariate and the dependent variable; the slopes represent the difference between the focal and reference groups. In general terms, the graph attempts to show the interaction or effect of contraceptive use (centered on the mean) on the fertility rate of the countries, differentiating between categories of average female education.
+One of the assumptions of ANCOVA models is that the slope, or ratio of variation, of the covariate between the comparison groups is similar, which is why it is assumed that by keeping its values constant the differences between groups will be easier to identify. As we saw in class, this assumption must be tested empirically.
 
-
-
-
+Figure 3. Interaction plot to summarize m5
 ```{r}
-(two_way = broom::augment(m3) %>%
-   distinct(high_gni, educ_fem_cat, .fitted))
+gf_point(fertility_rate ~ contraceptv_mc, data = dat, color = ~ educ_fem_cat, size = 4) %>%
+  gf_smooth(method = 'lm', size = 1)
 ```
 
-```{r}
-(mean_duration <- df_stats(fertility_rate ~ high_gni + educ_fem_cat, data = dat, mean))
-```
-
-
-
-
-
+In this case, we can see that from the beginning (observed values of fertility rate) the variation of our dependent variable was not the same across values of contraceptive use if we consider the division between countries with low or high level of female education. In general, those countries with low female educational level have higher fertility rates than those countries with higher educational opportunities for women. On the other hand, the ratio of variation in the slopes is more marked for the group of countries with better female education, while for the other group the variation in fertility rate decline is slower as the deviation of contraceptive use from the mean increases.
+This figure provides support for the m5 model, since it allows us to think that there is an interaction between the main effects of the predictors. Thus, it is possible to test whether the ANCOVA model's assumption of similarity in the slopes between groups is valid or not. For our case, the interaction is a contribution to the model's ability to predict the fertility rate values of the countries.
